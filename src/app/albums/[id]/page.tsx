@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { storage } from "@/lib/storage";
@@ -7,6 +8,13 @@ import AlbumClient from "./AlbumClient";
 export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { user, supabase } = await requireUser();
+
+  // Build the invite/QR base URL server-side so it renders identically on the
+  // server and client (avoids a hydration mismatch from reading window).
+  const hdrs = await headers();
+  const host = hdrs.get("host") ?? "localhost:3000";
+  const proto = hdrs.get("x-forwarded-proto") ?? "http";
+  const origin = `${proto}://${host}`;
 
   // RLS returns nothing if the user isn't a member, so this doubles as the
   // access check.
@@ -53,6 +61,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
       <AlbumClient
         albumId={album.id}
         joinCode={album.join_code}
+        origin={origin}
         isOwner={album.owner_id === user.id}
         currentUserId={user.id}
         members={memberList}

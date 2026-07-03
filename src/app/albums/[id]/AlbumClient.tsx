@@ -17,6 +17,7 @@ type Member = { userId: string; role: string; name: string };
 export default function AlbumClient({
   albumId,
   joinCode,
+  origin,
   isOwner,
   currentUserId,
   members,
@@ -24,6 +25,7 @@ export default function AlbumClient({
 }: {
   albumId: string;
   joinCode: string;
+  origin: string;
   isOwner: boolean;
   currentUserId: string;
   members: Member[];
@@ -35,7 +37,7 @@ export default function AlbumClient({
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/join?code=${joinCode}` : "";
+  const joinUrl = `${origin}/join?code=${joinCode}`;
 
   async function readDimensions(file: File): Promise<{ width: number | null; height: number | null }> {
     return new Promise((resolve) => {
