@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { recordRecap } from "./recap-video";
 
 type Slide = { url: string; caption: string };
 
@@ -19,7 +20,28 @@ export default function RecapPlayer({
 }) {
   const [index, setIndex] = useState(-1);
   const [playing, setPlaying] = useState(true);
+  const [recording, setRecording] = useState<number | null>(null);
+  const [recordError, setRecordError] = useState<string | null>(null);
   const last = slides.length - 1;
+
+  async function downloadVideo() {
+    setRecordError(null);
+    setPlaying(false);
+    setRecording(0);
+    try {
+      const { blob, ext } = await recordRecap(slides, title, (f) => setRecording(f));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title.replace(/[^a-z0-9]/gi, "-") || "recap"}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setRecordError(e instanceof Error ? e.message : "Couldn't create the video.");
+    } finally {
+      setRecording(null);
+    }
+  }
 
   const next = useCallback(() => {
     setIndex((i) => (i >= last ? -1 : i + 1));
@@ -95,6 +117,36 @@ export default function RecapPlayer({
         </button>
         <button style={ctrlBtn} onClick={next} aria-label="Next">›</button>
       </div>
+
+      {/* Download video */}
+      <button
+        style={downloadBtn}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (recording === null) downloadVideo();
+        }}
+        disabled={recording !== null}
+      >
+        {recording !== null ? "Recording…" : "Download video"}
+      </button>
+
+      {recording !== null && (
+        <div style={recordOverlay} onClick={(e) => e.stopPropagation()}>
+          <div style={{ fontSize: 18, marginBottom: 12 }}>Creating your video…</div>
+          <div style={{ width: 260, height: 6, background: "rgba(255,255,255,0.25)", borderRadius: 3 }}>
+            <div style={{ width: `${Math.round(recording * 100)}%`, height: "100%", background: "#fff", borderRadius: 3, transition: "width 0.2s" }} />
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.7, marginTop: 10 }}>
+            This records in real time, so it takes about as long as the recap plays.
+          </div>
+        </div>
+      )}
+      {recordError && (
+        <div style={{ ...recordOverlay, cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); setRecordError(null); }}>
+          <div style={{ maxWidth: 320, textAlign: "center" }}>{recordError}</div>
+          <div style={{ fontSize: 13, opacity: 0.7, marginTop: 10 }}>Tap to dismiss</div>
+        </div>
+      )}
 
       <Link href={`/albums/${albumId}`} style={closeStyle} onClick={(e) => e.stopPropagation()}>✕</Link>
     </div>
@@ -180,6 +232,31 @@ const ctrlBtn: React.CSSProperties = {
   height: 48,
   fontSize: 18,
   cursor: "pointer",
+};
+
+const downloadBtn: React.CSSProperties = {
+  position: "absolute",
+  top: 28,
+  left: 20,
+  background: "rgba(0,0,0,0.4)",
+  color: "#fff",
+  border: "1px solid rgba(255,255,255,0.3)",
+  borderRadius: 8,
+  padding: "8px 14px",
+  fontSize: 13,
+  cursor: "pointer",
+};
+
+const recordOverlay: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  background: "rgba(0,0,0,0.75)",
+  color: "#fff",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 10,
 };
 
 const closeStyle: React.CSSProperties = {
