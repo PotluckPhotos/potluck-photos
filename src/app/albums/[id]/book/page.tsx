@@ -29,11 +29,16 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
     height: p.height,
   }));
 
+  const { count: entryCount } = await supabase
+    .from("guestbook_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("album_id", id);
+
   return (
     <main style={{ maxWidth: 900, margin: "2rem auto", padding: "0 1.5rem" }}>
       <Link href={`/albums/${album.id}`} style={{ fontSize: 14 }}>&larr; Back to album</Link>
       <h1>Make a book</h1>
-      <BookBuilder albumId={album.id} defaultTitle={album.name} photos={photoList} />
+      <BookBuilder albumId={album.id} defaultTitle={album.name} photos={photoList} entryCount={entryCount ?? 0} />
     </main>
   );
 }

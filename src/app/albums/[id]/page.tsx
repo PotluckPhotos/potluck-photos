@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import AlbumClient from "./AlbumClient";
+import Guestbook from "./Guestbook";
 
 export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -43,6 +44,18 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
     uploadedBy: p.uploaded_by,
     url: storage.getPublicUrl(p.storage_key),
   }));
+
+  const { data: guestbook } = await supabase
+    .from("guestbook_entries")
+    .select("id, body, author_id, profiles(display_name)")
+    .eq("album_id", id)
+    .order("created_at", { ascending: true });
+
+  const entries = (guestbook ?? []).map((g) => {
+    const profile = g.profiles as { display_name?: string } | { display_name?: string }[] | null;
+    const name = Array.isArray(profile) ? profile[0]?.display_name : profile?.display_name;
+    return { id: g.id, body: g.body, authorId: g.author_id, authorName: name ?? "Guest" };
+  });
 
   const memberList = (members ?? []).map((m) => {
     const profile = m.profiles as { display_name?: string } | { display_name?: string }[] | null;
@@ -96,6 +109,13 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
         currentUserId={user.id}
         members={memberList}
         photos={photosWithUrls}
+      />
+
+      <Guestbook
+        albumId={album.id}
+        currentUserId={user.id}
+        isOwner={album.owner_id === user.id}
+        entries={entries}
       />
     </main>
   );

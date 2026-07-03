@@ -46,3 +46,23 @@ export async function deletePhoto(input: { albumId: string; photoId: string; key
   await storage.delete(input.key).catch(() => {});
   revalidatePath(`/albums/${input.albumId}`);
 }
+
+export async function addGuestbookEntry(input: { albumId: string; body: string }) {
+  const { user, supabase } = await requireUser();
+  const body = input.body.trim();
+  if (!body) return;
+  const { error } = await supabase.from("guestbook_entries").insert({
+    album_id: input.albumId,
+    author_id: user.id,
+    body,
+  });
+  if (error) throw error;
+  revalidatePath(`/albums/${input.albumId}`);
+}
+
+export async function deleteGuestbookEntry(input: { albumId: string; entryId: string }) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from("guestbook_entries").delete().eq("id", input.entryId);
+  if (error) throw error;
+  revalidatePath(`/albums/${input.albumId}`);
+}
