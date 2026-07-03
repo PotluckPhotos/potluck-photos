@@ -55,54 +55,56 @@ export default function AlbumClient({
     if (files.length === 0) return;
     setUploading(true);
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setProgress(`Uploading ${i + 1} of ${files.length}...`);
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const dims = await readDimensions(file);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setProgress(`Uploading ${i + 1} of ${files.length}...`);
+        const ext = file.name.split(".").pop() ?? "jpg";
+        const dims = await readDimensions(file);
 
-      const presignRes = await fetch("/api/upload/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ albumId, contentType: file.type, ext }),
-      });
-      if (!presignRes.ok) {
-        setProgress("Upload failed. Try again.");
-        setUploading(false);
-        return;
+        const presignRes = await fetch("/api/upload/presign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ albumId, contentType: file.type, ext }),
+        });
+        if (!presignRes.ok) throw new Error("Couldn't prepare the upload.");
+        const { uploadUrl, key } = await presignRes.json();
+
+        // A CORS/network failure here throws (not a non-ok response), so it's
+        // caught below rather than crashing into the error overlay.
+        const putRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!putRes.ok) throw new Error("Storage rejected the upload.");
+
+        await savePhoto({ albumId, key, caption: "", width: dims.width, height: dims.height });
       }
-      const { uploadUrl, key } = await presignRes.json();
-
-      const putRes = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!putRes.ok) {
-        setProgress("Upload failed. Try again.");
-        setUploading(false);
-        return;
-      }
-
-      await savePhoto({ albumId, key, caption: "", width: dims.width, height: dims.height });
+      setProgress(null);
+      e.target.value = "";
+    } catch {
+      setProgress("Upload failed — likely a storage CORS setting. Check the R2 bucket's CORS policy.");
+    } finally {
+      setUploading(false);
     }
-
-    setProgress(null);
-    setUploading(false);
-    e.target.value = "";
   }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviteMsg(null);
-    const res = await fetch("/api/invite", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ albumId, email: inviteEmail }),
-    });
-    const data = await res.json();
-    setInviteMsg(res.ok ? `Invite sent to ${inviteEmail}` : data.error);
-    if (res.ok) setInviteEmail("");
+    try {
+      const res = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ albumId, email: inviteEmail }),
+      });
+      const data = await res.json();
+      setInviteMsg(res.ok ? `Invite sent to ${inviteEmail}` : data.error);
+      if (res.ok) setInviteEmail("");
+    } catch {
+      setInviteMsg("Couldn't send the invite. Share the link or QR code instead.");
+    }
   }
 
   function downloadQR() {
