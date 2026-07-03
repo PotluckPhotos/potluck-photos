@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import AlbumClient from "./AlbumClient";
 import Guestbook from "./Guestbook";
+import { ghostButton } from "@/lib/ui";
+import { ChevronLeft, Play, BookIcon } from "@/components/icons";
 
 export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -64,38 +66,25 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
   });
 
   return (
-    <main style={{ maxWidth: 900, margin: "2rem auto", padding: "0 1.5rem" }}>
-      <Link href="/dashboard" style={{ fontSize: 14 }}>&larr; All albums</Link>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
+    <main style={{ maxWidth: 1040, margin: "0 auto", padding: "24px 28px 80px" }}>
+      <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 14 }}>
+        <ChevronLeft size={14} />
+        All albums
+      </Link>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
         <div>
-          <h1 style={{ marginBottom: 4 }}>{album.name}</h1>
+          <h1 style={{ fontFamily: "var(--font-head)", fontSize: 34, fontWeight: 700, margin: 0 }}>{album.name}</h1>
           {album.event_date && (
-            <p style={{ color: "var(--text-secondary)", marginTop: 0 }}>{album.event_date}</p>
+            <p style={{ color: "var(--text-secondary)", margin: "6px 0 0" }}>{album.event_date}</p>
           )}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Link
-            href={`/albums/${album.id}/recap`}
-            style={{
-              padding: "10px 18px",
-              borderRadius: 8,
-              border: "1px solid var(--border-strong, #ccc)",
-              textDecoration: "none",
-              color: "inherit",
-            }}
-          >
+        <div style={{ display: "flex", gap: 10 }}>
+          <Link href={`/albums/${album.id}/recap`} style={ghostButton}>
+            <Play size={14} />
             Play recap
           </Link>
-          <Link
-            href={`/albums/${album.id}/book`}
-            style={{
-              padding: "10px 18px",
-              borderRadius: 8,
-              border: "1px solid var(--border-strong, #ccc)",
-              textDecoration: "none",
-              color: "inherit",
-            }}
-          >
+          <Link href={`/albums/${album.id}/book`} style={ghostButton}>
+            <BookIcon size={14} />
             Make a book
           </Link>
         </div>

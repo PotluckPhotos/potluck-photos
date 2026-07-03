@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { addGuestbookEntry, deleteGuestbookEntry } from "./actions";
+import { card, iconBadge, input, ghostButton } from "@/lib/ui";
+import { GuestBookIcon } from "@/components/icons";
 
 export type Entry = {
   id: string;
@@ -37,52 +39,47 @@ export default function Guestbook({
   }
 
   return (
-    <section style={{ margin: "2rem 0" }}>
-      <h2 style={{ fontSize: 20 }}>Guest book</h2>
-      <p style={{ color: "var(--text-secondary)", fontSize: 14, marginTop: 0 }}>
-        Write a few words about the trip — these get scattered through the book and recap.
+    <section style={{ ...card, marginTop: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+        <div style={iconBadge}><GuestBookIcon size={15} /></div>
+        <h3 style={{ margin: 0, fontFamily: "var(--font-head)", fontSize: 16 }}>Guest book</h3>
+      </div>
+      <p style={{ margin: "2px 0 14px", fontSize: 13.5, color: "var(--text-secondary)" }}>
+        A few words about the trip — scattered through the book and recap.
       </p>
 
-      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 520 }}>
+      <form onSubmit={submit} style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Best week of the summer. That sunset on the last night…"
-          rows={3}
-          style={{ padding: 10, borderRadius: 8, border: "1px solid var(--border, #ccc)", resize: "vertical" }}
+          placeholder="Best week of the summer…"
+          rows={2}
+          style={{ ...input, flex: 1, resize: "vertical" }}
         />
-        <button type="submit" disabled={saving || !body.trim()} style={{ alignSelf: "flex-start" }}>
+        <button type="submit" disabled={saving || !body.trim()} style={{ ...ghostButton, whiteSpace: "nowrap", alignSelf: "flex-start" }}>
           {saving ? "Adding…" : "Add entry"}
         </button>
       </form>
 
       {entries.length > 0 && (
-        <ul style={{ listStyle: "none", padding: 0, marginTop: 20, display: "grid", gap: 12, maxWidth: 640 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {entries.map((entry) => (
-            <li
-              key={entry.id}
-              style={{
-                padding: "12px 16px",
-                borderRadius: 12,
-                border: "1px solid var(--border, #e5e5e5)",
-                background: "var(--surface-1, #fafafa)",
-              }}
-            >
-              <p style={{ margin: 0, fontStyle: "italic" }}>&ldquo;{entry.body}&rdquo;</p>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>— {entry.authorName}</span>
+            <div key={entry.id} style={{ borderRadius: 14, padding: "12px 16px", background: "var(--accent-tint)" }}>
+              <p style={{ margin: 0, fontStyle: "italic", fontSize: 14 }}>&ldquo;{entry.body}&rdquo;</p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                <span style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>— {entry.authorName}</span>
                 {(isOwner || entry.authorId === currentUserId) && (
                   <button
                     onClick={() => deleteGuestbookEntry({ albumId, entryId: entry.id })}
-                    style={{ fontSize: 12, border: "none", background: "transparent", cursor: "pointer", color: "var(--text-danger, #c00)" }}
+                    style={{ fontSize: 12, border: "none", background: "transparent", cursor: "pointer", color: "var(--text-danger)" }}
                   >
                     Delete
                   </button>
                 )}
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );

@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/client";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { card, input, primaryButton, ghostButton } from "@/lib/ui";
+import { GoogleG } from "@/components/icons";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -70,61 +72,59 @@ function LoginForm() {
 
   if (checkEmail) {
     return (
-      <div style={{ maxWidth: 360, margin: "4rem auto", textAlign: "center" }}>
-        <p>Check your email to confirm your account before signing in.</p>
+      <div style={{ maxWidth: 380, margin: "44px auto 0", padding: "0 20px" }}>
+        <div style={{ ...card, textAlign: "center" }}>
+          <p style={{ margin: 0 }}>Check your email to confirm your account before signing in.</p>
+        </div>
       </div>
     );
   }
 
+  const isSignUp = mode === "sign-up";
+
   return (
-    <div style={{ maxWidth: 360, margin: "4rem auto" }}>
-      <button onClick={handleGoogle} style={{ width: "100%", marginBottom: 16 }}>
-        Continue with Google
-      </button>
+    <div style={{ maxWidth: 380, margin: "44px auto 0", padding: "0 20px" }}>
+      <div style={card}>
+        <h1 style={{ fontFamily: "var(--font-head)", fontSize: 26, fontWeight: 700, margin: "0 0 4px", textAlign: "center" }}>
+          {isSignUp ? "Create your account" : "Welcome back"}
+        </h1>
+        <p style={{ margin: "0 0 20px", fontSize: 13.5, color: "var(--text-secondary)", textAlign: "center" }}>
+          {isSignUp ? "Start collecting photos from your people" : "Sign in to see your albums"}
+        </p>
 
-      <div style={{ textAlign: "center", margin: "16px 0", color: "var(--text-secondary)" }}>or</div>
-
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          minLength={8}
-          required
-        />
-        {mode === "sign-up" && (
-          <input
-            type="password"
-            placeholder="Confirm password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            minLength={8}
-            required
-          />
-        )}
-        {error && <p style={{ color: "var(--text-danger)" }}>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {mode === "sign-up" ? "Create account" : "Sign in"}
+        <button onClick={handleGoogle} style={{ ...ghostButton, width: "100%", marginBottom: 14 }}>
+          <GoogleG size={16} style={{ marginRight: 2 }} />
+          Continue with Google
         </button>
-      </form>
 
-      <button
-        onClick={() => {
-          setMode(mode === "sign-in" ? "sign-up" : "sign-in");
-          setError(null);
-        }}
-        style={{ width: "100%", marginTop: 16 }}
-      >
-        {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
-      </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0", color: "var(--text-muted)", fontSize: 12 }}>
+          <div style={{ flex: 1, height: 1, background: "var(--hairline)" }} />
+          or
+          <div style={{ flex: 1, height: 1, background: "var(--hairline)" }} />
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={input} />
+          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required style={input} />
+          {isSignUp && (
+            <input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={8} required style={input} />
+          )}
+          {error && <p style={{ color: "var(--text-danger)", margin: 0, fontSize: 13.5 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ ...primaryButton, width: "100%", opacity: loading ? 0.7 : 1 }}>
+            {isSignUp ? "Create account" : "Sign in"}
+          </button>
+        </form>
+
+        <button
+          onClick={() => {
+            setMode(isSignUp ? "sign-in" : "sign-up");
+            setError(null);
+          }}
+          style={{ width: "100%", marginTop: 16, background: "none", border: "none", color: "var(--accent)", fontSize: 13.5, cursor: "pointer", fontWeight: 600 }}
+        >
+          {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
+        </button>
+      </div>
     </div>
   );
 }

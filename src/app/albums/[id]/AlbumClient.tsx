@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { savePhoto, updateCaption, deletePhoto } from "./actions";
+import { card, iconBadge, input, primaryButton, ghostButton } from "@/lib/ui";
+import { Envelope, Copy, Users, Camera } from "@/components/icons";
 
 type Photo = {
   id: string;
@@ -120,20 +122,13 @@ export default function AlbumClient({
 
   return (
     <>
-      <section
-        style={{
-          display: "flex",
-          gap: 32,
-          flexWrap: "wrap",
-          margin: "1.5rem 0",
-          padding: 16,
-          borderRadius: 12,
-          border: "1px solid var(--border, #e5e5e5)",
-        }}
-      >
-        <div>
-          <h3 style={{ marginTop: 0 }}>Invite people</h3>
-          <p style={{ margin: "4px 0" }}>
+      <section style={{ ...card, display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 20 }}>
+        <div style={{ minWidth: 220 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={iconBadge}><Envelope size={15} /></div>
+            <h3 style={{ margin: 0, fontFamily: "var(--font-head)", fontSize: 16 }}>Invite people</h3>
+          </div>
+          <p style={{ margin: "0 0 10px", fontSize: 14 }}>
             Code: <strong style={{ letterSpacing: 3 }}>{joinCode}</strong>
           </p>
           <button
@@ -142,7 +137,9 @@ export default function AlbumClient({
               setCopied(true);
               setTimeout(() => setCopied(false), 1500);
             }}
+            style={{ ...primaryButton, width: "100%" }}
           >
+            <Copy size={14} />
             {copied ? "Copied!" : "Copy invite link"}
           </button>
 
@@ -153,77 +150,57 @@ export default function AlbumClient({
               value={inviteEmail}
               onChange={(ev) => setInviteEmail(ev.target.value)}
               required
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border, #ccc)" }}
+              style={{ ...input, flex: 1 }}
             />
-            <button type="submit">Email invite</button>
+            <button type="submit" style={{ ...ghostButton, whiteSpace: "nowrap" }}>Invite</button>
           </form>
-          {inviteMsg && (
-            <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>{inviteMsg}</p>
-          )}
+          {inviteMsg && <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 0 }}>{inviteMsg}</p>}
         </div>
 
         <div id="album-qr" style={{ textAlign: "center" }}>
-          {joinUrl && <QRCodeCanvas value={joinUrl} size={120} includeMargin />}
-          <div>
-            <button onClick={downloadQR} style={{ marginTop: 8, fontSize: 13 }}>
-              Download QR
-            </button>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 10, border: "1px solid var(--hairline)", display: "inline-block" }}>
+            {joinUrl && <QRCodeCanvas value={joinUrl} size={104} />}
+          </div>
+          <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6 }}>scan to join</div>
+          <button onClick={downloadQR} style={{ marginTop: 6, fontSize: 12, background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontWeight: 600 }}>
+            Download QR
+          </button>
+        </div>
+
+        <div style={{ minWidth: 150 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={iconBadge}><Users size={15} /></div>
+            <h3 style={{ margin: 0, fontFamily: "var(--font-head)", fontSize: 16 }}>Members</h3>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {members.map((m) => (
+              <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent-tint)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                  {m.name.charAt(0).toUpperCase()}
+                </div>
+                {m.name}
+                {m.role === "owner" && <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>(owner)</span>}
+              </div>
+            ))}
           </div>
         </div>
-
-        <div>
-          <h3 style={{ marginTop: 0 }}>Members</h3>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: 14 }}>
-            {members.map((m) => (
-              <li key={m.userId}>
-                {m.name} {m.role === "owner" && <span style={{ color: "var(--text-secondary)" }}>(owner)</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
       </section>
 
-      <section style={{ margin: "1.5rem 0" }}>
-        <label style={{ display: "inline-block", cursor: "pointer" }}>
-          <span
-            style={{
-              display: "inline-block",
-              padding: "10px 20px",
-              borderRadius: 8,
-              border: "1px solid var(--border-strong, #ccc)",
-            }}
-          >
-            {uploading ? "Uploading..." : "Add photos"}
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFiles}
-            disabled={uploading}
-            style={{ display: "none" }}
-          />
-        </label>
-        {progress && <span style={{ marginLeft: 12, color: "var(--text-secondary)" }}>{progress}</span>}
-      </section>
+      <label style={{ display: "block", marginBottom: 20 }}>
+        <span style={{ ...primaryButton, width: "100%", cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.7 : 1 }}>
+          <Camera size={15} />
+          {uploading ? "Uploading…" : "Add photos"}
+        </span>
+        <input type="file" accept="image/*" multiple onChange={handleFiles} disabled={uploading} style={{ display: "none" }} />
+      </label>
+      {progress && <p style={{ marginTop: -8, marginBottom: 16, color: "var(--text-secondary)", fontSize: 13 }}>{progress}</p>}
 
       {photos.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>No photos yet. Add the first ones above.</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: 12,
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 20 }}>
           {photos.map((photo) => (
-            <PhotoCard
-              key={photo.id}
-              photo={photo}
-              albumId={albumId}
-              canDelete={isOwner || photo.uploadedBy === currentUserId}
-            />
+            <PhotoCard key={photo.id} photo={photo} albumId={albumId} canDelete={isOwner || photo.uploadedBy === currentUserId} />
           ))}
         </div>
       )}
@@ -244,17 +221,17 @@ function PhotoCard({
   const [saved, setSaved] = useState(false);
 
   return (
-    <div style={{ border: "1px solid var(--border, #e5e5e5)", borderRadius: 12, overflow: "hidden" }}>
+    <div style={{ ...card, padding: 0, overflow: "hidden" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={photo.url}
         alt={photo.caption || "Album photo"}
-        style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }}
+        style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }}
       />
-      <div style={{ padding: 8 }}>
+      <div style={{ padding: "9px 10px" }}>
         <input
           value={caption}
-          placeholder="Add a caption..."
+          placeholder="Add a caption…"
           onChange={(e) => {
             setCaption(e.target.value);
             setSaved(false);
@@ -265,7 +242,7 @@ function PhotoCard({
               setSaved(true);
             }
           }}
-          style={{ width: "100%", border: "none", fontSize: 13, background: "transparent" }}
+          style={{ width: "100%", border: "none", fontSize: 12.5, background: "transparent", color: "var(--text-secondary)", outline: "none" }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{saved ? "Saved" : ""}</span>
@@ -276,7 +253,7 @@ function PhotoCard({
                   await deletePhoto({ albumId, photoId: photo.id, key: photo.key });
                 }
               }}
-              style={{ fontSize: 11, border: "none", background: "transparent", cursor: "pointer", color: "var(--text-danger, #c00)" }}
+              style={{ fontSize: 11, border: "none", background: "transparent", cursor: "pointer", color: "var(--text-danger)" }}
             >
               Delete
             </button>

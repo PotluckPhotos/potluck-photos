@@ -1,26 +1,55 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --page-bg: #FFF8F2;
+  --text-primary: #2B1810;
+  --text-secondary: #8a6f5e;
+  --text-muted: #c2ac9c;
+
+  --accent: #FF6B6B;
+  --accent-2: #FFD166;
+  --accent-grad: linear-gradient(135deg, #FF6B6B, #FFD166);
+  --accent-tint: rgba(255, 107, 107, 0.14);
+  --accent-shadow: rgba(255, 107, 107, 0.32);
+  --accent-line: rgba(255, 107, 107, 0.2);
+  --ghost-border: rgba(255, 107, 107, 0.22);
+
+  --hairline: rgba(120, 60, 40, 0.12);
+  --gold: #F4C98F;
+
+  /* Compatibility aliases for components styled before the redesign. */
+  --border: rgba(120, 60, 40, 0.14);
+  --border-strong: rgba(120, 60, 40, 0.22);
+  --surface-1: rgba(255, 255, 255, 0.6);
+  --surface-2: #ffffff;
+  --text-accent: var(--accent);
+  --bg-accent: var(--accent-tint);
+  --text-danger: #c0392b;
+  --border-warning: rgba(181, 101, 29, 0.5);
+  --text-warning: #b5651d;
+  --radius: 10px;
+
+  --font-head: var(--font-dm-serif), Georgia, serif;
+  --font-body: var(--font-dm-sans), system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+input, textarea, select, button { font-family: var(--font-body); }
+h1, h2, h3 { font-family: var(--font-head); font-weight: 700; letter-spacing: -0.01em; }
+
+@keyframes drift1 { 0% { transform: translate(-6%,-4%) scale(1); } 50% { transform: translate(9%,10%) scale(1.18); } 100% { transform: translate(-6%,-4%) scale(1); } }
+@keyframes drift2 { 0% { transform: translate(6%,6%) scale(1); } 50% { transform: translate(-11%,-9%) scale(1.22); } 100% { transform: translate(6%,6%) scale(1); } }
+@keyframes drift3 { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(7%,-13%) scale(1.12); } 100% { transform: translate(0,0) scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-blob] { animation: none !important; }
 }
