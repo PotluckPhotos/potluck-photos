@@ -127,6 +127,15 @@ export function Camera({ size = 15, color = "#fff", style }: IconProps) {
   );
 }
 
+export function Download({ size = 15, color = "#fff" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+      <path d="M12 3v13m0 0l-5-5m5 5l5-5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 18v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function GuestBookIcon({ size = 15, color = A }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none">

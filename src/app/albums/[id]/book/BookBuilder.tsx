@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { card, input as inputToken, primaryButton } from "@/lib/ui";
+import { Download } from "@/components/icons";
 
 type Photo = { id: string; url: string; caption: string; width: number | null; height: number | null };
 
@@ -102,14 +104,14 @@ export default function BookBuilder({
 
   return (
     <>
-      <section style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end", margin: "1rem 0" }}>
+      <section style={{ ...card, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 20 }}>
         <label style={fieldStyle}>
           <span style={labelStyle}>Cover title</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputToken} />
         </label>
         <label style={fieldStyle}>
           <span style={labelStyle}>Template</span>
-          <select value={template} onChange={(e) => setTemplate(e.target.value)} style={inputStyle}>
+          <select value={template} onChange={(e) => setTemplate(e.target.value)} style={inputToken}>
             {Object.entries(TEMPLATES).map(([key, t]) => (
               <option key={key} value={key}>{t.label}</option>
             ))}
@@ -117,14 +119,15 @@ export default function BookBuilder({
         </label>
         <label style={fieldStyle}>
           <span style={labelStyle}>Book size</span>
-          <select value={size} onChange={(e) => setSize(e.target.value)} style={inputStyle}>
+          <select value={size} onChange={(e) => setSize(e.target.value)} style={inputToken}>
             {Object.entries(SIZES).map(([key, s]) => (
               <option key={key} value={key}>{s.label}</option>
             ))}
           </select>
         </label>
-        <button onClick={generate} disabled={generating || selected.size === 0} style={{ padding: "10px 20px" }}>
-          {generating ? "Building PDF…" : `Generate book (${selected.size} photos)`}
+        <button onClick={generate} disabled={generating || selected.size === 0} style={{ ...primaryButton, opacity: generating || selected.size === 0 ? 0.6 : 1 }}>
+          <Download size={15} />
+          {generating ? "Building PDF…" : `Download book (${selected.size} photos)`}
         </button>
       </section>
 
@@ -134,17 +137,17 @@ export default function BookBuilder({
       </p>
 
       {!coverId && (
-        <p style={{ fontSize: 13, color: "var(--text-warning, #a60)" }}>
+        <p style={{ fontSize: 13, color: "var(--text-warning)" }}>
           Pick a cover photo — tap “Set cover” on the one you want on the front.
         </p>
       )}
       {lowResSelectedCount > 0 && (
-        <p style={{ fontSize: 13, color: "var(--text-warning, #a60)" }}>
+        <p style={{ fontSize: 13, color: "var(--text-warning)" }}>
           {lowResSelectedCount} selected photo{lowResSelectedCount > 1 ? "s" : ""} may look soft at this
           size — outlined below. You can still include them.
         </p>
       )}
-      {error && <p style={{ color: "var(--text-danger, #c00)" }}>{error}</p>}
+      {error && <p style={{ color: "var(--text-danger)" }}>{error}</p>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginTop: 12 }}>
         {photos.map((photo) => {
@@ -156,9 +159,9 @@ export default function BookBuilder({
               key={photo.id}
               style={{
                 border: isCover
-                  ? "2px solid var(--text-accent, #06c)"
+                  ? "2px solid var(--accent)"
                   : lowRes
-                  ? "2px solid var(--border-warning, #d90)"
+                  ? "2px solid var(--border-warning)"
                   : "2px solid transparent",
                 borderRadius: 12,
                 overflow: "hidden",
@@ -174,12 +177,12 @@ export default function BookBuilder({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo.url} alt={photo.caption || "Photo"} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} />
               </button>
-              <span style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: on ? "var(--text-accent, #06c)" : "rgba(0,0,0,0.4)", color: "#fff", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: on ? "var(--accent)" : "rgba(0,0,0,0.4)", color: "#fff", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {on ? "✓" : ""}
               </span>
               <button
                 onClick={() => setCover(photo.id)}
-                style={{ position: "absolute", bottom: 6, left: 6, fontSize: 11, padding: "3px 8px", borderRadius: 6, border: "none", cursor: "pointer", background: isCover ? "var(--text-accent, #06c)" : "rgba(0,0,0,0.55)", color: "#fff" }}
+                style={{ position: "absolute", bottom: 6, left: 6, fontSize: 11, padding: "3px 8px", borderRadius: 6, border: "none", cursor: "pointer", background: isCover ? "var(--accent)" : "rgba(0,0,0,0.55)", color: "#fff" }}
               >
                 {isCover ? "★ Cover" : "Set cover"}
               </button>
@@ -193,4 +196,3 @@ export default function BookBuilder({
 
 const fieldStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 4 };
 const labelStyle: React.CSSProperties = { fontSize: 13, color: "var(--text-secondary)" };
-const inputStyle: React.CSSProperties = { padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border, #ccc)" };
