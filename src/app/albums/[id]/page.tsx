@@ -60,18 +60,32 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
             <p style={{ color: "var(--text-secondary)", marginTop: 0 }}>{album.event_date}</p>
           )}
         </div>
-        <Link
-          href={`/albums/${album.id}/book`}
-          style={{
-            padding: "10px 18px",
-            borderRadius: 8,
-            border: "1px solid var(--border-strong, #ccc)",
-            textDecoration: "none",
-            color: "inherit",
-          }}
-        >
-          Make a book
-        </Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link
+            href={`/albums/${album.id}/recap`}
+            style={{
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid var(--border-strong, #ccc)",
+              textDecoration: "none",
+              color: "inherit",
+            }}
+          >
+            Play recap
+          </Link>
+          <Link
+            href={`/albums/${album.id}/book`}
+            style={{
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid var(--border-strong, #ccc)",
+              textDecoration: "none",
+              color: "inherit",
+            }}
+          >
+            Make a book
+          </Link>
+        </div>
       </div>
 
       <AlbumClient
