@@ -68,10 +68,20 @@ export async function deleteAlbum(input: { albumId: string; confirmName: string 
     .eq("album_id", input.albumId);
   await Promise.all((photos ?? []).map((p) => storage.delete(p.storage_key).catch(() => {})));
 
-  const { error } = await supabase.from("albums").delete().eq("id", input.albumId);
+  // .select() so we can confirm a row was actually removed — if RLS blocks the
+  // delete (e.g. the owner DELETE policy from migration 0005 isn't applied), it
+  // affects zero rows without erroring, which would otherwise look like success.
+  const { data: deleted, error } = await supabase
+    .from("albums")
+    .delete()
+    .eq("id", input.albumId)
+    .select("id");
   if (error) throw error;
+  if (!deleted || deleted.length === 0) {
+    throw new Error("The album couldn't be deleted. Make sure the owner delete policy (migration 0005) has been applied.");
+  }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/dashboard", "layout");
   redirect("/dashboard");
 }
 
