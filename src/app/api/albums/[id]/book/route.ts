@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { storage } from "@/lib/storage";
 import { generateBook, BOOK_SIZES, TEMPLATES, type Template } from "@/lib/book";
 
+// pdf-lib needs the Node runtime (not edge), and generating a book with many
+// photos can take a while — give it more than Vercel's 10s default.
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: albumId } = await params;
   const supabase = await createClient();
