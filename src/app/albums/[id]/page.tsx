@@ -53,10 +53,26 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
   return (
     <main style={{ maxWidth: 900, margin: "2rem auto", padding: "0 1.5rem" }}>
       <Link href="/dashboard" style={{ fontSize: 14 }}>&larr; All albums</Link>
-      <h1 style={{ marginBottom: 4 }}>{album.name}</h1>
-      {album.event_date && (
-        <p style={{ color: "var(--text-secondary)", marginTop: 0 }}>{album.event_date}</p>
-      )}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ marginBottom: 4 }}>{album.name}</h1>
+          {album.event_date && (
+            <p style={{ color: "var(--text-secondary)", marginTop: 0 }}>{album.event_date}</p>
+          )}
+        </div>
+        <Link
+          href={`/albums/${album.id}/book`}
+          style={{
+            padding: "10px 18px",
+            borderRadius: 8,
+            border: "1px solid var(--border-strong, #ccc)",
+            textDecoration: "none",
+            color: "inherit",
+          }}
+        >
+          Make a book
+        </Link>
+      </div>
 
       <AlbumClient
         albumId={album.id}
