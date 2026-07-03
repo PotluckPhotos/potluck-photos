@@ -5,6 +5,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { card, input, primaryButton, ghostButton } from "@/lib/ui";
 import { GoogleG } from "@/components/icons";
+import { safeNext } from "@/lib/safe-next";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -19,7 +20,7 @@ export default function LoginPage() {
 function LoginForm() {
   const supabase = createClient();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeNext(searchParams.get("next"));
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
