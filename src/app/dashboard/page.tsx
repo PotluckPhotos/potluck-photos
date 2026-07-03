@@ -17,7 +17,12 @@ const COVERS = [
   "linear-gradient(135deg, #FF6B6B, #F4D9A8)",
 ];
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ joinError?: string }>;
+}) {
+  const { joinError } = await searchParams;
   const { user, supabase } = await requireUser();
 
   const { data: albums } = await supabase
@@ -57,7 +62,14 @@ export default async function DashboardPage() {
             <div style={iconBadge}><PaperPlane size={16} /></div>
             <h3 style={{ margin: 0, fontFamily: "var(--font-head)", fontSize: 17 }}>Join with a code</h3>
           </div>
-          <input name="code" placeholder="ABCDE" required maxLength={5} style={{ ...input, textTransform: "uppercase", letterSpacing: 4 }} />
+          <input name="code" placeholder="ABCDE" required style={{ ...input, textTransform: "uppercase", letterSpacing: 4 }} />
+          {joinError && (
+            <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-danger)" }}>
+              {joinError === "short"
+                ? "Enter the 5-character code, or paste the invite link."
+                : "That code didn’t match an album. Double-check it and try again."}
+            </p>
+          )}
           <button type="submit" style={{ ...primaryButton, width: "100%", marginTop: 10 }}>Join album</button>
         </form>
       </section>

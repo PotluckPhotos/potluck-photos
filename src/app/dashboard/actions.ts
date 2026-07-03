@@ -35,13 +35,24 @@ export async function createAlbum(formData: FormData) {
   redirect(`/albums/${albumId}`);
 }
 
+// Accepts a raw 5-char code or a full invite link (e.g. someone pastes the
+// "Copy invite link" URL) and returns just the normalized code.
+function normalizeCode(raw: string): string {
+  let value = raw.trim();
+  const fromUrl = value.match(/[?&]code=([^&\s]+)/i);
+  if (fromUrl) value = decodeURIComponent(fromUrl[1]);
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+}
+
 export async function joinByCode(formData: FormData) {
   const { supabase } = await requireUser();
-  const code = String(formData.get("code") ?? "").trim();
-  if (!code) return;
+  const code = normalizeCode(String(formData.get("code") ?? ""));
+  if (code.length < 5) redirect("/dashboard?joinError=short");
 
   const { data, error } = await supabase.rpc("join_album_by_code", { code });
-  if (error) throw error;
+  // The RPC raises for an unknown code (Postgres P0001); treat any failure as
+  // an invalid code rather than letting it crash the page.
+  if (error || !data) redirect("/dashboard?joinError=invalid");
 
   revalidatePath("/dashboard");
   redirect(`/albums/${data}`);

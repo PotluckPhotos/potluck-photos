@@ -39,7 +39,6 @@ export default async function JoinPage({
           name="code"
           placeholder="ABCDE"
           required
-          maxLength={5}
           defaultValue={code ?? ""}
           style={{
             padding: "10px 12px",
