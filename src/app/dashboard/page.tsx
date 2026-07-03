@@ -33,7 +33,6 @@ export default async function DashboardPage() {
         <form action={createAlbum} style={cardStyle}>
           <h3 style={{ marginTop: 0 }}>Create an album</h3>
           <input name="name" placeholder="Italy 2026" required style={inputStyle} />
-          <input name="event_date" type="date" style={inputStyle} />
           <button type="submit" style={{ marginTop: 8 }}>Create</button>
         </form>
 
