@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { storage } from "@/lib/storage";
@@ -45,6 +46,33 @@ export async function deletePhoto(input: { albumId: string; photoId: string; key
   if (error) throw error;
   await storage.delete(input.key).catch(() => {});
   revalidatePath(`/albums/${input.albumId}`);
+}
+
+export async function deleteAlbum(input: { albumId: string; confirmName: string }) {
+  const { user, supabase } = await requireUser();
+
+  const { data: album } = await supabase
+    .from("albums")
+    .select("name, owner_id")
+    .eq("id", input.albumId)
+    .maybeSingle();
+  if (!album || album.owner_id !== user.id) throw new Error("Only the owner can delete this album.");
+  if (input.confirmName.trim() !== album.name) throw new Error("The typed name doesn't match.");
+
+  // Remove the stored image objects first (the DB cascade only deletes rows,
+  // not the files in R2). Failures are ignored so one missing object doesn't
+  // block the delete.
+  const { data: photos } = await supabase
+    .from("photos")
+    .select("storage_key")
+    .eq("album_id", input.albumId);
+  await Promise.all((photos ?? []).map((p) => storage.delete(p.storage_key).catch(() => {})));
+
+  const { error } = await supabase.from("albums").delete().eq("id", input.albumId);
+  if (error) throw error;
+
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }
 
 export async function addGuestbookEntry(input: { albumId: string; body: string }) {

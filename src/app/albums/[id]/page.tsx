@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import AlbumClient from "./AlbumClient";
 import Guestbook from "./Guestbook";
+import DeleteAlbum from "./DeleteAlbum";
 import { ghostButton } from "@/lib/ui";
 import { ChevronLeft, Play, BookIcon } from "@/components/icons";
 
@@ -106,6 +107,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
         isOwner={album.owner_id === user.id}
         entries={entries}
       />
+
+      {album.owner_id === user.id && <DeleteAlbum albumId={album.id} albumName={album.name} />}
     </main>
   );
 }

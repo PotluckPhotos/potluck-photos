@@ -2,26 +2,27 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Service = { name: string; tag: string; url: string };
+type Service = { name: string; tag: string; url: string; logo: string };
 
+// Only services that accept a finished print-ready PDF (what Potluck exports).
+// API-based print services aren't listed since there's no direct-order flow.
 const SERVICES: Service[] = [
-  { name: "Mimeo Photos", tag: "PDF import", url: "https://mimeophotos.com/pdf-import-service/" },
-  { name: "Blurb", tag: "PDF upload", url: "https://www.blurb.com/" },
-  { name: "Gelato", tag: "Print API", url: "https://www.gelato.com/" },
-  { name: "Peecho", tag: "Print API", url: "https://www.peecho.com/" },
-  { name: "Lulu", tag: "Print API", url: "https://www.lulu.com/" },
-  { name: "Mixam", tag: "PDF upload", url: "https://www.mixam.com/" },
+  { name: "Mimeo Photos", tag: "PDF import", url: "https://mimeophotos.com/pdf-import-service/", logo: "/logos/mimeo.svg" },
+  { name: "Blurb", tag: "PDF upload", url: "https://www.blurb.com/", logo: "/logos/blurb.svg" },
+  { name: "Mixam", tag: "PDF upload", url: "https://www.mixam.com/", logo: "/logos/mixam.svg" },
 ];
 
 const GAP = 20;
 const SPEED = 32; // px/second
 const RADIUS = 150; // magnification falloff distance, px
-const MAX_BOOST = 0.5; // center item scales up to 1.5x, dock-style
+const MAX_BOOST = 0.5; // center item scales to 1.5x, dock-style
+const COPIES = 6; // enough repeats that the loop always spans the viewport
 
 export default function ServiceMarquee() {
   const trackRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [failed, setFailed] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -85,13 +86,15 @@ export default function ServiceMarquee() {
     };
   }, [reduceMotion]);
 
-  const loop = reduceMotion ? SERVICES : [...SERVICES, ...SERVICES, ...SERVICES];
+  const loop = reduceMotion ? SERVICES : Array.from({ length: COPIES }, () => SERVICES).flat();
 
   return (
     <div
       style={{
         overflow: "hidden",
-        padding: "20px 0",
+        // Generous top padding so the magnified center item grows upward
+        // without being clipped by the container.
+        padding: "56px 0 20px",
         maskImage: "linear-gradient(90deg, transparent, black 12%, black 88%, transparent)",
         WebkitMaskImage: "linear-gradient(90deg, transparent, black 12%, black 88%, transparent)",
       }}
@@ -103,6 +106,7 @@ export default function ServiceMarquee() {
           gap: GAP,
           width: "max-content",
           flexWrap: reduceMotion ? "wrap" : "nowrap",
+          justifyContent: reduceMotion ? "center" : "flex-start",
           willChange: "transform",
         }}
       >
@@ -119,7 +123,7 @@ export default function ServiceMarquee() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 6,
+              gap: 8,
               width: 116,
               flexShrink: 0,
               textDecoration: "none",
@@ -130,24 +134,30 @@ export default function ServiceMarquee() {
           >
             <div
               style={{
-                width: 52,
-                height: 52,
-                borderRadius: "50%",
-                background: "var(--accent-grad)",
-                color: "#fff",
+                width: 100,
+                height: 56,
+                borderRadius: 14,
+                background: "#fff",
+                border: "1px solid var(--hairline)",
+                boxShadow: "0 6px 16px rgba(120,60,40,0.08)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: "var(--font-head)",
-                fontSize: 20,
-                fontWeight: 700,
-                boxShadow: "0 6px 16px var(--accent-shadow)",
-                flexShrink: 0,
+                padding: "0 10px",
               }}
             >
-              {service.name.charAt(0)}
+              {failed.has(i) ? (
+                <span style={{ fontWeight: 700, fontSize: 15 }}>{service.name.split(" ")[0]}</span>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={service.logo}
+                  alt={service.name}
+                  style={{ maxWidth: 80, maxHeight: 28 }}
+                  onError={() => setFailed((prev) => new Set(prev).add(i))}
+                />
+              )}
             </div>
-            <span style={{ fontSize: 12.5, fontWeight: 600, textAlign: "center" }}>{service.name}</span>
             <span
               style={{
                 fontSize: 10.5,
