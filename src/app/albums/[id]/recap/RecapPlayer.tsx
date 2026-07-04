@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { recordRecap } from "./recap-video";
+import { Maximize, Minimize } from "@/components/icons";
 
 export type Slide =
   | { type: "photo"; url: string; caption: string; focusX: number; focusY: number }
@@ -40,8 +41,32 @@ export default function RecapPlayer({
   const [recording, setRecording] = useState<number | null>(null);
   const [recordError, setRecordError] = useState<string | null>(null);
   const [music, setMusic] = useState("");
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const last = slides.length - 1;
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) containerRef.current?.requestFullscreen?.().catch(() => {});
+    else document.exitFullscreen?.().catch(() => {});
+  }
+
+  // Play/pause. If we're paused on the last slide, start over (rather than
+  // resuming a finished recap).
+  function togglePlay() {
+    if (!playing && index >= last) {
+      setIndex(-1);
+      setPlaying(true);
+    } else {
+      setPlaying((p) => !p);
+    }
+  }
 
   // Live soundtrack: follow play/pause; browsers allow this because selecting a
   // track (or tapping the screen) is a user gesture.
@@ -72,31 +97,33 @@ export default function RecapPlayer({
     }
   }
 
-  const next = useCallback(() => {
-    setIndex((i) => (i >= last ? -1 : i + 1));
-  }, [last]);
+  // Manual nav clamps at the ends — no wraparound.
+  const next = useCallback(() => setIndex((i) => Math.min(i + 1, last)), [last]);
+  const prev = useCallback(() => setIndex((i) => Math.max(i - 1, -1)), []);
 
-  const prev = useCallback(() => {
-    setIndex((i) => (i <= -1 ? last : i - 1));
-  }, [last]);
-
+  // Auto-advance, and stop (don't loop) once the last slide is reached.
   useEffect(() => {
     if (!playing || slides.length === 0) return;
-    const t = setTimeout(next, SLIDE_MS);
+    if (index >= last) {
+      setPlaying(false);
+      return;
+    }
+    const t = setTimeout(() => setIndex((i) => i + 1), SLIDE_MS);
     return () => clearTimeout(t);
-  }, [index, playing, next, slides.length]);
+  }, [index, playing, last, slides.length]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === " ") {
         e.preventDefault();
-        setPlaying((p) => !p);
+        togglePlay();
       } else if (e.key === "ArrowRight") next();
       else if (e.key === "ArrowLeft") prev();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [next, prev]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [next, prev, playing, index, last]);
 
   if (slides.length === 0) {
     return (
@@ -113,7 +140,7 @@ export default function RecapPlayer({
   const kbClass = index % 2 === 0 ? "kb-a" : "kb-b";
 
   return (
-    <div style={fullscreen} onClick={() => setPlaying((p) => !p)}>
+    <div ref={containerRef} style={fullscreen} onClick={togglePlay}>
       <style>{keyframes}</style>
 
       {showingTitle ? (
@@ -148,10 +175,13 @@ export default function RecapPlayer({
       {/* Controls (stopPropagation so they don't toggle play) */}
       <div style={controls} onClick={(e) => e.stopPropagation()}>
         <button style={ctrlBtn} onClick={prev} aria-label="Previous">‹</button>
-        <button style={ctrlBtn} onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause" : "Play"}>
+        <button style={ctrlBtn} onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
           {playing ? "❚❚" : "▶"}
         </button>
         <button style={ctrlBtn} onClick={next} aria-label="Next">›</button>
+        <button style={ctrlBtn} onClick={toggleFullscreen} aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
+          {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+        </button>
       </div>
 
       {/* Download video */}

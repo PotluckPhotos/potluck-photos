@@ -127,6 +127,22 @@ export function Camera({ size = 15, color = "#fff", style }: IconProps) {
   );
 }
 
+export function Maximize({ size = 16, color = "#fff" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function Minimize({ size = 16, color = "#fff" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+      <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function Eye({ size = 18, color = "currentColor" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none">

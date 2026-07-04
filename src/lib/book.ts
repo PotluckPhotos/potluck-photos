@@ -12,14 +12,23 @@ export const BOOK_SIZES: Record<string, BookSize> = {
 };
 
 export const TEMPLATES: Record<Template, { label: string; description: string }> = {
-  classic: { label: "Classic", description: "White pages, one photo centered with a caption below." },
-  modern: { label: "Modern", description: "Full-bleed photos, captions over a dark bar." },
-  collage: { label: "Collage", description: "Two photos per page for a denser scrapbook feel." },
+  classic: { label: "Classic", description: "Matted prints on warm pages with a caption below." },
+  modern: { label: "Modern", description: "Full-bleed photos, edge to edge, caption over a soft fade." },
+  collage: { label: "Collage", description: "Up to four framed photos per page, scrapbook style." },
 };
 
-const MARGIN = 40;
+const MARGIN = 44;
+
+// Warm photo-book palette.
+const CREAM = rgb(0.992, 0.984, 0.965);
+const CARD = rgb(1, 1, 1);
+const INK = rgb(0.17, 0.15, 0.13);
+const MUTED = rgb(0.5, 0.46, 0.42);
+const FRAME = rgb(0.86, 0.83, 0.77);
+const ACCENT = rgb(1, 0.42, 0.35);
 
 type Fonts = { regular: PDFFont; bold: PDFFont; italic: PDFFont };
+type Img = { width: number; height: number };
 
 function detectImageType(bytes: Uint8Array): "jpg" | "png" | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8) return "jpg";
@@ -57,44 +66,64 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
   return lines;
 }
 
-function drawCentered(page: PDFPage, text: string, y: number, font: PDFFont, size: number, color = rgb(0.2, 0.2, 0.2), maxWidth?: number) {
-  const w = page.getWidth();
+function truncate(text: string, font: PDFFont, size: number, maxWidth: number): string {
   let str = text;
-  if (maxWidth) {
-    while (str.length > 1 && font.widthOfTextAtSize(str, size) > maxWidth) str = str.slice(0, -2) + "…";
-  }
-  const tw = font.widthOfTextAtSize(str, size);
-  page.drawText(str, { x: (w - tw) / 2, y, size, font, color });
+  while (str.length > 1 && font.widthOfTextAtSize(str, size) > maxWidth) str = str.slice(0, -2) + "…";
+  return str;
 }
 
-// Draws an image scaled to *contain* within a box (whole photo visible).
-function drawContain(page: PDFPage, img: { width: number; height: number }, drawImg: () => void, box: { x: number; y: number; w: number; h: number }) {
+function drawCentered(page: PDFPage, text: string, y: number, font: PDFFont, size: number, color = INK, maxWidth?: number) {
+  const str = maxWidth ? truncate(text, font, size, maxWidth) : text;
+  const tw = font.widthOfTextAtSize(str, size);
+  page.drawText(str, { x: (page.getWidth() - tw) / 2, y, size, font, color });
+}
+
+// Fit the whole image inside a box (letterboxed), returning draw coords.
+function contain(img: Img, box: { x: number; y: number; w: number; h: number }) {
   const scale = Math.min(box.w / img.width, box.h / img.height);
   const dw = img.width * scale;
   const dh = img.height * scale;
-  return { x: box.x + (box.w - dw) / 2, y: box.y + (box.h - dh) / 2, width: dw, height: dh, drawImg };
+  return { x: box.x + (box.w - dw) / 2, y: box.y + (box.h - dh) / 2, width: dw, height: dh };
 }
 
-// Cover-crop values (image fills box; overflow is clipped by the page bounds).
-// Positions by focal point (fx/fy percent from top-left). fy is flipped because
-// pdf-lib's origin is bottom-left.
-function coverDims(img: { width: number; height: number }, W: number, H: number, fx = 50, fy = 50) {
+// Cover-crop to fill W×H by focal point (overflow clipped by the page bounds).
+function coverDims(img: Img, W: number, H: number, fx = 50, fy = 50) {
   const scale = Math.max(W / img.width, H / img.height);
   const dw = img.width * scale;
   const dh = img.height * scale;
   return { x: (W - dw) * (fx / 100), y: (H - dh) * (1 - fy / 100), width: dw, height: dh };
 }
 
-export async function generateBook(
-  opts: {
-    title: string;
-    template: Template;
-    size: BookSize;
-    cover: BookPhoto | null;
-    photos: BookPhoto[];
-    entries: BookEntry[];
+// Fake a bottom-up dark gradient by stacking translucent bars — used to keep
+// overlaid captions legible on full-bleed photos.
+function drawBottomScrim(page: PDFPage, W: number, height: number) {
+  const steps = 10;
+  for (let i = 0; i < steps; i++) {
+    page.drawRectangle({ x: 0, y: 0, width: W, height: (height * (i + 1)) / steps, color: rgb(0, 0, 0), opacity: 0.06 });
   }
-): Promise<Uint8Array> {
+}
+
+function drawPageNumber(page: PDFPage, fonts: Fonts, n: number, light = false) {
+  drawCentered(page, String(n), 22, fonts.regular, 9, light ? rgb(1, 1, 1) : MUTED);
+}
+
+// A white "print" card with a hairline frame, photo contained inside.
+function drawFramedPhoto(page: PDFPage, img: Img | null, box: { x: number; y: number; w: number; h: number }, embed: (d: { x: number; y: number; width: number; height: number }) => void) {
+  page.drawRectangle({ x: box.x, y: box.y, width: box.w, height: box.h, color: CARD, borderColor: FRAME, borderWidth: 0.75 });
+  if (!img) return;
+  const pad = 8;
+  const d = contain(img, { x: box.x + pad, y: box.y + pad, w: box.w - pad * 2, h: box.h - pad * 2 });
+  embed(d);
+}
+
+export async function generateBook(opts: {
+  title: string;
+  template: Template;
+  size: BookSize;
+  cover: BookPhoto | null;
+  photos: BookPhoto[];
+  entries: BookEntry[];
+}): Promise<Uint8Array> {
   const { title, template, size, cover, photos, entries } = opts;
   const { width: W, height: H } = size;
   const pdf = await PDFDocument.create();
@@ -106,20 +135,20 @@ export async function generateBook(
 
   await drawCover(pdf, fonts, { title, template, W, H, cover });
 
-  // Group photos per page, then evenly distribute guest entries between blocks.
-  const perPage = template === "collage" ? 2 : 1;
+  const perPage = template === "collage" ? 4 : 1;
   const photoBlocks: BookPhoto[][] = [];
   for (let i = 0; i < photos.length; i += perPage) photoBlocks.push(photos.slice(i, i + perPage));
 
   const gap = entries.length ? Math.max(1, Math.floor(photoBlocks.length / (entries.length + 1))) : 0;
+  let pageNo = 1;
   let ei = 0;
   for (let i = 0; i < photoBlocks.length; i++) {
-    await drawPhotoBlock(pdf, fonts, { template, W, H, photos: photoBlocks[i] });
+    await drawPhotoBlock(pdf, fonts, { template, W, H, photos: photoBlocks[i], pageNo: pageNo++ });
     if (gap && ei < entries.length && (i + 1) % gap === 0) {
-      drawEntryPage(pdf, fonts, { W, H, entry: entries[ei++] });
+      drawEntryPage(pdf, fonts, { W, H, entry: entries[ei++], pageNo: pageNo++ });
     }
   }
-  while (ei < entries.length) drawEntryPage(pdf, fonts, { W, H, entry: entries[ei++] });
+  while (ei < entries.length) drawEntryPage(pdf, fonts, { W, H, entry: entries[ei++], pageNo: pageNo++ });
 
   return pdf.save();
 }
@@ -127,24 +156,36 @@ export async function generateBook(
 async function drawCover(pdf: PDFDocument, fonts: Fonts, o: { title: string; template: Template; W: number; H: number; cover: BookPhoto | null }) {
   const page = pdf.addPage([o.W, o.H]);
   const img = o.cover ? await fetchImage(pdf, o.cover.url) : null;
+  const cx = o.W / 2;
 
-  if (o.template === "classic") {
-    page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(1, 1, 1) });
-    if (img) {
-      const d = drawContain(page, img, () => {}, { x: MARGIN, y: MARGIN + 70, w: o.W - MARGIN * 2, h: o.H - MARGIN * 2 - 70 });
-      page.drawImage(img, d);
-    }
-    drawCentered(page, o.title, MARGIN + 28, fonts.bold, 26, rgb(0.1, 0.1, 0.1), o.W - MARGIN * 2);
-  } else {
-    // modern + collage: full-bleed cover photo with title over a dark bar.
+  if (o.template === "modern") {
+    // Full-bleed cover, title in the lower third over a fade.
     if (img) page.drawImage(img, coverDims(img, o.W, o.H, o.cover?.focusX, o.cover?.focusY));
     else page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(0.15, 0.15, 0.18) });
-    page.drawRectangle({ x: 0, y: 0, width: o.W, height: 110, color: rgb(0, 0, 0), opacity: 0.45 });
-    drawCentered(page, o.title, 46, fonts.bold, 28, rgb(1, 1, 1), o.W - MARGIN * 2);
+    drawBottomScrim(page, o.W, o.H * 0.4);
+    drawCentered(page, o.title, 54, fonts.bold, 30, rgb(1, 1, 1), o.W - MARGIN * 2);
+    return;
   }
+
+  if (o.template === "collage") {
+    // Full-bleed cover with a clean cream title band at the bottom.
+    if (img) page.drawImage(img, coverDims(img, o.W, o.H, o.cover?.focusX, o.cover?.focusY));
+    else page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: CREAM });
+    const band = 96;
+    page.drawRectangle({ x: 0, y: 0, width: o.W, height: band, color: CREAM });
+    drawCentered(page, o.title, band / 2 - 6, fonts.bold, 28, INK, o.W - MARGIN * 2);
+    return;
+  }
+
+  // classic: matted cover photo on a cream page, title below with rules.
+  page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: CREAM });
+  drawFramedPhoto(page, img, { x: MARGIN, y: MARGIN + 96, w: o.W - MARGIN * 2, h: o.H - MARGIN * 2 - 96 }, (d) => img && page.drawImage(img, d));
+  const titleY = MARGIN + 44;
+  page.drawLine({ start: { x: cx - 40, y: titleY + 30 }, end: { x: cx + 40, y: titleY + 30 }, thickness: 1, color: ACCENT });
+  drawCentered(page, o.title, titleY, fonts.bold, 26, INK, o.W - MARGIN * 2);
 }
 
-async function drawPhotoBlock(pdf: PDFDocument, fonts: Fonts, o: { template: Template; W: number; H: number; photos: BookPhoto[] }) {
+async function drawPhotoBlock(pdf: PDFDocument, fonts: Fonts, o: { template: Template; W: number; H: number; photos: BookPhoto[]; pageNo: number }) {
   const page = pdf.addPage([o.W, o.H]);
 
   if (o.template === "modern") {
@@ -153,53 +194,59 @@ async function drawPhotoBlock(pdf: PDFDocument, fonts: Fonts, o: { template: Tem
     page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(0.1, 0.1, 0.1) });
     if (img) page.drawImage(img, coverDims(img, o.W, o.H, photo.focusX, photo.focusY));
     if (photo.caption) {
-      page.drawRectangle({ x: 0, y: 0, width: o.W, height: 52, color: rgb(0, 0, 0), opacity: 0.4 });
-      page.drawText(truncate(photo.caption, fonts.regular, 13, o.W - MARGIN * 2), { x: MARGIN, y: 20, size: 13, font: fonts.regular, color: rgb(1, 1, 1) });
+      drawBottomScrim(page, o.W, 90);
+      page.drawText(truncate(photo.caption, fonts.regular, 13, o.W - MARGIN * 2), { x: MARGIN, y: 30, size: 13, font: fonts.regular, color: rgb(1, 1, 1) });
     }
+    drawPageNumber(page, fonts, o.pageNo, true);
     return;
   }
 
-  // classic (1 photo) and collage (up to 2 photos): white page, contained photos.
-  page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(1, 1, 1) });
-  const count = o.photos.length;
-  const slotH = (o.H - MARGIN * 2 - (count - 1) * 16) / count;
-
-  for (let i = 0; i < count; i++) {
-    const photo = o.photos[i];
-    const img = await fetchImage(pdf, photo.url);
-    const slotY = o.H - MARGIN - (i + 1) * slotH - i * 16;
-    const capH = photo.caption ? 22 : 0;
-    if (img) {
-      const d = drawContain(page, img, () => {}, { x: MARGIN, y: slotY + capH, w: o.W - MARGIN * 2, h: slotH - capH });
-      page.drawImage(img, d);
+  if (o.template === "collage") {
+    page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: CREAM });
+    const gutter = 16;
+    const cellW = (o.W - MARGIN * 2 - gutter) / 2;
+    const cellH = (o.H - MARGIN * 2 - gutter) / 2;
+    for (let i = 0; i < o.photos.length && i < 4; i++) {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const x = MARGIN + col * (cellW + gutter);
+      const y = o.H - MARGIN - (row + 1) * cellH - row * gutter;
+      const img = await fetchImage(pdf, o.photos[i].url);
+      drawFramedPhoto(page, img, { x, y, w: cellW, h: cellH }, (d) => img && page.drawImage(img, d));
     }
-    if (photo.caption) {
-      drawCentered(page, photo.caption, slotY + 4, fonts.regular, 11, rgb(0.35, 0.35, 0.35), o.W - MARGIN * 2);
-    }
+    drawPageNumber(page, fonts, o.pageNo);
+    return;
   }
+
+  // classic: one matted print with a serif-italic caption below.
+  const photo = o.photos[0];
+  const img = await fetchImage(pdf, photo.url);
+  page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: CREAM });
+  const capH = photo.caption ? 40 : 0;
+  drawFramedPhoto(page, img, { x: MARGIN, y: MARGIN + capH, w: o.W - MARGIN * 2, h: o.H - MARGIN * 2 - capH }, (d) => img && page.drawImage(img, d));
+  if (photo.caption) {
+    drawCentered(page, photo.caption, MARGIN + 14, fonts.italic, 13, MUTED, o.W - MARGIN * 2);
+  }
+  drawPageNumber(page, fonts, o.pageNo);
 }
 
-function drawEntryPage(pdf: PDFDocument, fonts: Fonts, o: { W: number; H: number; entry: BookEntry }) {
+function drawEntryPage(pdf: PDFDocument, fonts: Fonts, o: { W: number; H: number; entry: BookEntry; pageNo: number }) {
   const page = pdf.addPage([o.W, o.H]);
-  page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(0.97, 0.96, 0.93) });
+  page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(0.97, 0.955, 0.925) });
 
-  const size = 18;
+  // Oversized decorative opening quote.
+  drawCentered(page, "“", o.H / 2 + 70, fonts.bold, 90, rgb(0.9, 0.83, 0.72));
+
+  const size = 19;
   const maxWidth = o.W - MARGIN * 3;
-  const lines = wrapText(`“${o.entry.body}”`, fonts.italic, size, maxWidth);
+  const lines = wrapText(o.entry.body, fonts.italic, size, maxWidth);
   const lineHeight = size * 1.5;
-  const blockHeight = lines.length * lineHeight;
-  let y = o.H / 2 + blockHeight / 2;
-
+  let y = o.H / 2 + (lines.length * lineHeight) / 2;
   for (const line of lines) {
-    const tw = fonts.italic.widthOfTextAtSize(line, size);
-    page.drawText(line, { x: (o.W - tw) / 2, y, size, font: fonts.italic, color: rgb(0.25, 0.22, 0.2) });
+    drawCentered(page, line, y, fonts.italic, size, rgb(0.25, 0.22, 0.2));
     y -= lineHeight;
   }
-  drawCentered(page, `— ${o.entry.author}`, y - 8, fonts.regular, 13, rgb(0.45, 0.42, 0.4), maxWidth);
-}
-
-function truncate(text: string, font: PDFFont, size: number, maxWidth: number): string {
-  let str = text;
-  while (str.length > 1 && font.widthOfTextAtSize(str, size) > maxWidth) str = str.slice(0, -2) + "…";
-  return str;
+  page.drawLine({ start: { x: o.W / 2 - 24, y: y + 4 }, end: { x: o.W / 2 + 24, y: y + 4 }, thickness: 1, color: ACCENT });
+  drawCentered(page, o.entry.author.toUpperCase(), y - 18, fonts.regular, 11, MUTED, maxWidth);
+  drawPageNumber(page, fonts, o.pageNo);
 }

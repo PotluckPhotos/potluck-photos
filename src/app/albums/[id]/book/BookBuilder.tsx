@@ -13,9 +13,9 @@ const SIZES: Record<string, { label: string; longEdgeIn: number }> = {
 };
 
 const TEMPLATES: Record<string, { label: string; description: string }> = {
-  classic: { label: "Classic", description: "White pages, one photo centered with a caption below." },
-  modern: { label: "Modern", description: "Full-bleed photos, captions over a dark bar." },
-  collage: { label: "Collage", description: "Two photos per page for a denser scrapbook feel." },
+  classic: { label: "Classic", description: "Matted prints on warm pages with a caption below." },
+  modern: { label: "Modern", description: "Full-bleed photos, edge to edge, caption over a soft fade." },
+  collage: { label: "Collage", description: "Up to four framed photos per page, scrapbook style." },
 };
 
 const MIN_DPI = 150;
