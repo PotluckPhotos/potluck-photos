@@ -9,19 +9,19 @@ export type Slide =
   | { type: "entry"; body: string; author: string };
 
 export const TRACKS: { slug: string; name: string }[] = [
-  { slug: "warm", name: "Warm" },
-  { slug: "sunny", name: "Sunny" },
-  { slug: "calm", name: "Calm" },
-  { slug: "dreamy", name: "Dreamy" },
-  { slug: "nostalgic", name: "Nostalgic" },
+  { slug: "feel-good", name: "Feel Good" },
+  { slug: "success-vibes", name: "Success Vibes" },
+  { slug: "inspiring", name: "Inspiring" },
+  { slug: "journey", name: "Journey" },
+  { slug: "energetic", name: "Energetic" },
+  { slug: "exciting", name: "Exciting" },
   { slug: "bright", name: "Bright" },
-  { slug: "gentle", name: "Gentle" },
-  { slug: "cinematic", name: "Cinematic" },
+  { slug: "sunny", name: "Sunny" },
   { slug: "playful", name: "Playful" },
-  { slug: "mellow", name: "Mellow" },
+  { slug: "quiet-progress", name: "Quiet Progress" },
 ];
 
-const trackUrl = (slug: string) => `/music/${slug}.m4a`;
+const trackUrl = (slug: string) => `/music/${slug}.mp3`;
 
 const SLIDE_MS = 5000;
 
