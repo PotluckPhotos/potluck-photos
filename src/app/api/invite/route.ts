@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { inviteEmailHtml } from "@/lib/emails";
 
-// Emails a join link. Requires RESEND_API_KEY to be set; without it the client
-// falls back to copy-link / QR, which work with no email service configured.
+// Emails the album's join code. Requires RESEND_API_KEY to be set; without it
+// the client falls back to the code + QR, which work with no email configured.
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -30,8 +31,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const origin = new URL(request.url).origin;
-  const joinUrl = `${origin}/join?code=${album.join_code}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
   const from = process.env.INVITE_FROM_EMAIL ?? "Potluck <onboarding@resend.dev>";
 
   const { Resend } = await import("resend");
@@ -40,8 +40,13 @@ export async function POST(request: NextRequest) {
     from,
     to: email,
     subject: `You're invited to the "${album.name}" photo album`,
-    html: `<p>${user.email} invited you to add photos to <strong>${album.name}</strong> on Potluck.</p>
-           <p><a href="${joinUrl}">Join the album</a> (or enter code <strong>${album.join_code}</strong>).</p>`,
+    html: inviteEmailHtml({
+      albumName: album.name,
+      code: album.join_code,
+      inviter: user.email ?? "Someone",
+      siteUrl,
+      logoUrl: `${siteUrl}/logo.png`,
+    }),
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 502 });
 

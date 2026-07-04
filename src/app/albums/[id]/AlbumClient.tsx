@@ -128,19 +128,22 @@ export default function AlbumClient({
             <div style={iconBadge}><Envelope size={15} /></div>
             <h3 style={{ margin: 0, fontFamily: "var(--font-head)", fontSize: 16 }}>Invite people</h3>
           </div>
-          <p style={{ margin: "0 0 10px", fontSize: 14 }}>
-            Code: <strong style={{ letterSpacing: 3 }}>{joinCode}</strong>
+          <p style={{ margin: "0 0 6px", fontSize: 13.5, color: "var(--text-secondary)" }}>
+            Share this code — people enter it at potluck.photos to join.
           </p>
+          <div style={{ fontFamily: "var(--font-head)", fontSize: 30, fontWeight: 700, letterSpacing: 6, marginBottom: 10 }}>
+            {joinCode}
+          </div>
           <button
             onClick={() => {
-              navigator.clipboard.writeText(joinUrl);
+              navigator.clipboard.writeText(joinCode);
               setCopied(true);
               setTimeout(() => setCopied(false), 1500);
             }}
             style={{ ...primaryButton, width: "100%" }}
           >
             <Copy size={14} />
-            {copied ? "Copied!" : "Copy invite link"}
+            {copied ? "Copied!" : "Copy code"}
           </button>
 
           <form onSubmit={handleInvite} style={{ marginTop: 12, display: "flex", gap: 8 }}>
