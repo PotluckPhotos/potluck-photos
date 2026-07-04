@@ -6,7 +6,6 @@ const ACCENT = "#FF6B6B";
 const PAGE_BG = "#FFF8F2";
 const TEXT = "#2B1810";
 const MUTED = "#8a6f5e";
-const TINT = "#FDEAE4";
 
 export function inviteEmailHtml(opts: {
   albumName: string;
@@ -16,6 +15,7 @@ export function inviteEmailHtml(opts: {
   logoUrl: string;
 }): string {
   const { albumName, code, inviter, siteUrl, logoUrl } = opts;
+  const joinUrl = `${siteUrl}/join?code=${encodeURIComponent(code)}`;
   return `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:${PAGE_BG};">
@@ -31,16 +31,16 @@ export function inviteEmailHtml(opts: {
             ${escapeHtml(inviter)} invited you to the <strong style="color:${TEXT};">${escapeHtml(albumName)}</strong> album on Potluck Photos.
           </p>
         </td></tr>
-        <tr><td align="center" style="padding:24px 32px 4px;">
-          <div style="font-size:12px;letter-spacing:1px;color:${MUTED};text-transform:uppercase;">Your join code</div>
-          <div style="margin-top:8px;background:${TINT};border-radius:14px;padding:16px 24px;display:inline-block;">
-            <span style="font-size:34px;font-weight:700;letter-spacing:8px;color:${ACCENT};">${escapeHtml(code)}</span>
-          </div>
+        <tr><td align="center" style="padding:26px 32px 6px;">
+          <a href="${joinUrl}" style="display:inline-block;background:${ACCENT};color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:12px;">
+            Join the album
+          </a>
         </td></tr>
-        <tr><td align="center" style="padding:16px 32px 0;">
-          <p style="margin:0;font-size:14px;color:${TEXT};line-height:1.6;">
-            Go to <a href="${siteUrl}" style="color:${ACCENT};font-weight:700;text-decoration:none;">${stripProtocol(siteUrl)}</a>,
-            sign in, and enter this code under &ldquo;Join with a code.&rdquo;
+        <tr><td align="center" style="padding:12px 32px 0;">
+          <p style="margin:0;font-size:13px;color:${MUTED};line-height:1.6;">
+            Button not working? Go to
+            <a href="${siteUrl}" style="color:${ACCENT};font-weight:700;text-decoration:none;">${stripProtocol(siteUrl)}</a>
+            and enter code <strong style="color:${TEXT};letter-spacing:2px;">${escapeHtml(code)}</strong>.
           </p>
         </td></tr>
         <tr><td align="center" style="padding:24px 32px 28px;">
