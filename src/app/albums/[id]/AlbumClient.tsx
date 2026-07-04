@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { QRCodeCanvas } from "qrcode.react";
 import { savePhoto, updateCaption, deletePhoto, updateFocus } from "./actions";
 import { card, iconBadge, input, primaryButton, ghostButton } from "@/lib/ui";
@@ -317,36 +318,51 @@ function FocusEditor({
   onCancel: () => void;
   saving: boolean;
 }) {
-  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
+  const areaRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function updateFromEvent(e: React.PointerEvent) {
+    const rect = areaRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setFocus({ x: Math.round(x), y: Math.round(y) });
+    setFocus({ x: Math.max(0, Math.min(100, Math.round(x))), y: Math.max(0, Math.min(100, Math.round(y))) });
   }
 
-  return (
+  const modal = (
     <div
       onClick={onCancel}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: 20 }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 }}
     >
       <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 16, maxWidth: 460, width: "100%" }}>
         <p style={{ margin: "0 0 10px", fontSize: 14, color: "var(--text-secondary)" }}>
-          Tap the face or subject — it&apos;ll stay in frame wherever the photo is cropped.
+          Drag the circle onto the face or subject — it&apos;ll stay in frame wherever the photo is cropped.
         </p>
-        <div onClick={handleClick} style={{ position: "relative", cursor: "crosshair", lineHeight: 0, borderRadius: 10, overflow: "hidden" }}>
+        <div
+          ref={areaRef}
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            setDragging(true);
+            updateFromEvent(e);
+          }}
+          onPointerMove={(e) => dragging && updateFromEvent(e)}
+          onPointerUp={() => setDragging(false)}
+          style={{ position: "relative", cursor: dragging ? "grabbing" : "grab", touchAction: "none", lineHeight: 0, borderRadius: 10, overflow: "hidden" }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="Set focal point" style={{ width: "100%", height: "auto", display: "block" }} />
+          <img src={url} alt="Set focal point" draggable={false} style={{ width: "100%", height: "auto", display: "block", userSelect: "none" }} />
           <div
             style={{
               position: "absolute",
               left: `${focus.x}%`,
               top: `${focus.y}%`,
-              width: 28,
-              height: 28,
-              marginLeft: -14,
-              marginTop: -14,
+              width: 34,
+              height: 34,
+              marginLeft: -17,
+              marginTop: -17,
               borderRadius: "50%",
               border: "3px solid #fff",
+              background: "rgba(255,107,107,0.35)",
               boxShadow: "0 0 0 2px rgba(0,0,0,0.4)",
               pointerEvents: "none",
             }}
@@ -361,4 +377,8 @@ function FocusEditor({
       </div>
     </div>
   );
+
+  // Render outside the card — the glass card's backdrop-filter creates a
+  // containing block that would otherwise trap and clip this fixed overlay.
+  return createPortal(modal, document.body);
 }
