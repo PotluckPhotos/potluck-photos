@@ -16,6 +16,8 @@ const TEMPLATES: Record<string, { label: string; description: string }> = {
   classic: { label: "Classic", description: "Matted prints on warm pages with a caption below." },
   modern: { label: "Modern", description: "Full-bleed photos, edge to edge, caption over a soft fade." },
   collage: { label: "Collage", description: "Up to four framed photos per page, scrapbook style." },
+  polaroid: { label: "Polaroid", description: "One instant-photo card per page with a handwritten-style caption." },
+  magazine: { label: "Magazine", description: "A big photo with the caption set as an editorial headline." },
 };
 
 const MIN_DPI = 150;
