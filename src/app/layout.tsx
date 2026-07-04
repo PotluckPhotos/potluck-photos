@@ -18,7 +18,6 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Potluck Photos",
   description: "A shared photo album you turn into a printed book.",
-  icons: { icon: "/logo.png", apple: "/logo.png" },
 };
 
 export default function RootLayout({
