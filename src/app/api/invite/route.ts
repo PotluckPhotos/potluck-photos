@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Email isn't set up yet. Share the link or QR code instead." },
+      { error: "Email isn't set up yet. Share the code or QR instead." },
       { status: 501 }
     );
   }
