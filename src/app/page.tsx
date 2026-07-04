@@ -96,7 +96,7 @@ function Landing() {
           Invite your people to a trip or event album. Everyone adds their photos and writes a few words —
           then turn it all into a printed book or a recap slideshow.
         </p>
-        <Link href="/login" style={{ ...primaryButton, fontSize: 15, padding: "12px 22px" }}>Get started — it&apos;s free</Link>
+        <Link href="/login?mode=signup" style={{ ...primaryButton, fontSize: 15, padding: "12px 22px" }}>Get started — it&apos;s free</Link>
       </section>
 
       {/* How it works */}
@@ -150,7 +150,7 @@ function Landing() {
           <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: "14px 0 0" }}>
             Open source (AGPL-3.0) — you can also self-host it on your own storage for free.
           </p>
-          <Link href="/login" style={{ ...primaryButton, marginTop: 20 }}>Start your first album</Link>
+          <Link href="/login?mode=signup" style={{ ...primaryButton, marginTop: 20 }}>Start your first album</Link>
         </div>
       </section>
     </main>

@@ -127,6 +127,24 @@ export function Camera({ size = 15, color = "#fff", style }: IconProps) {
   );
 }
 
+export function Eye({ size = 18, color = "currentColor" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+export function EyeOff({ size = 18, color = "currentColor" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+      <path d="M10.6 6.2A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.4 3.3M6.4 6.4A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4-.9" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function Download({ size = 15, color = "#fff" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none">

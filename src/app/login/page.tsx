@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { card, input, primaryButton, ghostButton } from "@/lib/ui";
-import { GoogleG } from "@/components/icons";
+import { GoogleG, Eye, EyeOff } from "@/components/icons";
 import { safeNext } from "@/lib/safe-next";
 
 type Mode = "sign-in" | "sign-up";
@@ -21,10 +21,11 @@ function LoginForm() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get("next"));
-  const [mode, setMode] = useState<Mode>("sign-in");
+  const [mode, setMode] = useState<Mode>(searchParams.get("mode") === "signup" ? "sign-up" : "sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkEmail, setCheckEmail] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -106,9 +107,21 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={input} />
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required style={input} />
+          <PasswordField
+            placeholder="Password"
+            value={password}
+            onChange={(v) => setPassword(v)}
+            show={showPassword}
+            onToggle={() => setShowPassword((s) => !s)}
+          />
           {isSignUp && (
-            <input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={8} required style={input} />
+            <PasswordField
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(v) => setConfirmPassword(v)}
+              show={showPassword}
+              onToggle={() => setShowPassword((s) => !s)}
+            />
           )}
           {error && <p style={{ color: "var(--text-danger)", margin: 0, fontSize: 13.5 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...primaryButton, width: "100%", opacity: loading ? 0.7 : 1 }}>
@@ -126,6 +139,42 @@ function LoginForm() {
           {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function PasswordField({
+  placeholder,
+  value,
+  onChange,
+  show,
+  onToggle,
+}: {
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        type={show ? "text" : "password"}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        minLength={8}
+        required
+        style={{ ...input, paddingRight: 42 }}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={show ? "Hide password" : "Show password"}
+        style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex", padding: 4 }}
+      >
+        {show ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
     </div>
   );
 }
