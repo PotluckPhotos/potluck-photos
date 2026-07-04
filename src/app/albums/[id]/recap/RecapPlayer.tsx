@@ -1,12 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { recordRecap } from "./recap-video";
 
 export type Slide =
   | { type: "photo"; url: string; caption: string; focusX: number; focusY: number }
   | { type: "entry"; body: string; author: string };
+
+export const TRACKS: { slug: string; name: string }[] = [
+  { slug: "warm", name: "Warm" },
+  { slug: "sunny", name: "Sunny" },
+  { slug: "calm", name: "Calm" },
+  { slug: "dreamy", name: "Dreamy" },
+  { slug: "nostalgic", name: "Nostalgic" },
+  { slug: "bright", name: "Bright" },
+  { slug: "gentle", name: "Gentle" },
+  { slug: "cinematic", name: "Cinematic" },
+  { slug: "playful", name: "Playful" },
+  { slug: "mellow", name: "Mellow" },
+];
+
+const trackUrl = (slug: string) => `/music/${slug}.m4a`;
 
 const SLIDE_MS = 5000;
 
@@ -24,14 +39,26 @@ export default function RecapPlayer({
   const [playing, setPlaying] = useState(true);
   const [recording, setRecording] = useState<number | null>(null);
   const [recordError, setRecordError] = useState<string | null>(null);
+  const [music, setMusic] = useState("");
+  const audioRef = useRef<HTMLAudioElement>(null);
   const last = slides.length - 1;
+
+  // Live soundtrack: follow play/pause; browsers allow this because selecting a
+  // track (or tapping the screen) is a user gesture.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (music && playing && recording === null) audio.play().catch(() => {});
+    else audio.pause();
+  }, [music, playing, recording]);
 
   async function downloadVideo() {
     setRecordError(null);
     setPlaying(false);
     setRecording(0);
+    audioRef.current?.pause();
     try {
-      const { blob, ext } = await recordRecap(slides, title, (f) => setRecording(f));
+      const { blob, ext } = await recordRecap(slides, title, (f) => setRecording(f), music ? trackUrl(music) : null);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -128,16 +155,25 @@ export default function RecapPlayer({
       </div>
 
       {/* Download video */}
-      <button
-        style={downloadBtn}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (recording === null) downloadVideo();
-        }}
-        disabled={recording !== null}
-      >
-        {recording !== null ? "Recording…" : "Download video"}
-      </button>
+      <audio ref={audioRef} src={music ? trackUrl(music) : undefined} loop />
+
+      <div style={topLeftControls} onClick={(e) => e.stopPropagation()}>
+        <select value={music} onChange={(e) => setMusic(e.target.value)} style={controlStyle} aria-label="Recap music">
+          <option value="">🎵 No music</option>
+          {TRACKS.map((t) => (
+            <option key={t.slug} value={t.slug}>{t.name}</option>
+          ))}
+        </select>
+        <button
+          style={controlStyle}
+          onClick={() => {
+            if (recording === null) downloadVideo();
+          }}
+          disabled={recording !== null}
+        >
+          {recording !== null ? "Recording…" : "Download video"}
+        </button>
+      </div>
 
       {recording !== null && (
         <div style={recordOverlay} onClick={(e) => e.stopPropagation()}>
@@ -255,11 +291,19 @@ const ctrlBtn: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const downloadBtn: React.CSSProperties = {
+const topLeftControls: React.CSSProperties = {
   position: "absolute",
-  top: 28,
+  top: 20,
   left: 20,
-  background: "rgba(0,0,0,0.4)",
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+  alignItems: "flex-start",
+  zIndex: 5,
+};
+
+const controlStyle: React.CSSProperties = {
+  background: "rgba(0,0,0,0.5)",
   color: "#fff",
   border: "1px solid rgba(255,255,255,0.3)",
   borderRadius: 8,

@@ -10,8 +10,10 @@ const TITLE_MS = 3000;
 const SLIDE_MS = 3500;
 const CF_MS = 800;
 
-function pickMime(): string {
-  const candidates = ["video/mp4;codecs=avc1", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+function pickMime(withAudio: boolean): string {
+  const candidates = withAudio
+    ? ["video/mp4;codecs=avc1,mp4a.40.2", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
+    : ["video/mp4;codecs=avc1", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
   return candidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? "video/webm";
 }
 
@@ -112,7 +114,8 @@ function drawPhoto(ctx: CanvasRenderingContext2D, img: HTMLImageElement, caption
 export async function recordRecap(
   slides: Slide[],
   title: string,
-  onProgress: (fraction: number) => void
+  onProgress: (fraction: number) => void,
+  musicUrl: string | null = null
 ): Promise<{ blob: Blob; ext: string }> {
   const photoUrls = slides.filter((s): s is Extract<Slide, { type: "photo" }> => s.type === "photo").map((s) => s.url);
   const images = await loadImages(photoUrls);
@@ -154,9 +157,35 @@ export async function recordRecap(
     }
   }
 
-  const stream = canvas.captureStream(30);
-  const mimeType = pickMime();
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+  const videoStream = canvas.captureStream(30);
+
+  // Optionally mix a music track into the recording by routing an <audio>
+  // element through the Web Audio API into the recorded stream.
+  let stream = videoStream;
+  let audioEl: HTMLAudioElement | null = null;
+  let audioCtx: AudioContext | null = null;
+  if (musicUrl) {
+    try {
+      audioEl = new Audio(musicUrl);
+      audioEl.loop = true;
+      audioCtx = new AudioContext();
+      const srcNode = audioCtx.createMediaElementSource(audioEl);
+      const dest = audioCtx.createMediaStreamDestination();
+      srcNode.connect(dest);
+      stream = new MediaStream([...videoStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+    } catch {
+      stream = videoStream; // fall back to silent video if audio setup fails
+      audioEl = null;
+      audioCtx = null;
+    }
+  }
+
+  const mimeType = pickMime(!!audioEl);
+  const recorder = new MediaRecorder(stream, {
+    mimeType,
+    videoBitsPerSecond: 8_000_000,
+    ...(audioEl ? { audioBitsPerSecond: 128_000 } : {}),
+  });
   const chunks: Blob[] = [];
   recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   const finished = new Promise<Blob>((resolve) => {
@@ -164,6 +193,10 @@ export async function recordRecap(
   });
 
   recorder.start();
+  if (audioEl && audioCtx) {
+    await audioCtx.resume().catch(() => {});
+    await audioEl.play().catch(() => {});
+  }
   const startTime = performance.now();
   await new Promise<void>((resolve) => {
     function loop(now: number) {
@@ -182,5 +215,7 @@ export async function recordRecap(
   });
 
   const blob = await finished;
+  audioEl?.pause();
+  await audioCtx?.close().catch(() => {});
   return { blob, ext: mimeType.includes("mp4") ? "mp4" : "webm" };
 }

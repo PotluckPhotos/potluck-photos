@@ -22,6 +22,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get("next"));
   const [mode, setMode] = useState<Mode>(searchParams.get("mode") === "signup" ? "sign-up" : "sign-in");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,7 +54,10 @@ function LoginForm() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          data: { display_name: name.trim() },
+        },
       });
       setLoading(false);
       if (error) {
@@ -106,6 +110,9 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {isSignUp && (
+            <input type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required style={input} />
+          )}
           <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={input} />
           <PasswordField
             placeholder="Password"

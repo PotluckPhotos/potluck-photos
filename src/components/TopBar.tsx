@@ -16,9 +16,12 @@ export default async function TopBar() {
       </Link>
 
       {user ? (
-        <form action="/auth/signout" method="post">
-          <button type="submit" style={ghostButton}>Sign out</button>
-        </form>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Link href="/settings" style={ghostButton}>Settings</Link>
+          <form action="/auth/signout" method="post">
+            <button type="submit" style={ghostButton}>Sign out</button>
+          </form>
+        </div>
       ) : (
         <Link href="/login" style={ghostButton}>Sign in</Link>
       )}
