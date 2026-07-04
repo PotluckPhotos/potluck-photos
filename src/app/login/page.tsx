@@ -85,15 +85,6 @@ function LoginForm() {
 
   return (
     <div style={{ maxWidth: 380, margin: "24px auto 0", padding: "0 20px" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/logo.png"
-        alt="Potluck Photos"
-        style={{ display: "block", width: 200, maxWidth: "70%", height: "auto", margin: "0 auto 16px" }}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = "none";
-        }}
-      />
       <div style={card}>
         <h1 style={{ fontFamily: "var(--font-head)", fontSize: 26, fontWeight: 700, margin: "0 0 4px", textAlign: "center" }}>
           {isSignUp ? "Create your account" : "Welcome back"}

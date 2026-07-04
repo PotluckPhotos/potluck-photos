@@ -81,8 +81,8 @@ export async function deleteAlbum(input: { albumId: string; confirmName: string 
     throw new Error("The album couldn't be deleted. Make sure the owner delete policy (migration 0005) has been applied.");
   }
 
-  revalidatePath("/dashboard", "layout");
-  redirect("/dashboard");
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function addGuestbookEntry(input: { albumId: string; body: string }) {

@@ -68,7 +68,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main style={{ maxWidth: 1040, margin: "0 auto", padding: "24px 28px 80px" }}>
-      <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 14 }}>
+      <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 14 }}>
         <ChevronLeft size={14} />
         All albums
       </Link>

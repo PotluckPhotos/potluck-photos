@@ -31,7 +31,7 @@ export async function createAlbum(formData: FormData) {
 
   if (!created) throw new Error("Could not create album, please try again.");
 
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   redirect(`/albums/${albumId}`);
 }
 
@@ -47,13 +47,13 @@ function normalizeCode(raw: string): string {
 export async function joinByCode(formData: FormData) {
   const { supabase } = await requireUser();
   const code = normalizeCode(String(formData.get("code") ?? ""));
-  if (code.length < 5) redirect("/dashboard?joinError=short");
+  if (code.length < 5) redirect("/?joinError=short");
 
   const { data, error } = await supabase.rpc("join_album_by_code", { code });
   // The RPC raises for an unknown code (Postgres P0001); treat any failure as
   // an invalid code rather than letting it crash the page.
-  if (error || !data) redirect("/dashboard?joinError=invalid");
+  if (error || !data) redirect("/?joinError=invalid");
 
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   redirect(`/albums/${data}`);
 }
