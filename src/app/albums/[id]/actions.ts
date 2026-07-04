@@ -39,6 +39,40 @@ export async function updateCaption(input: { albumId: string; photoId: string; c
   revalidatePath(`/albums/${input.albumId}`);
 }
 
+export async function removeMember(input: { albumId: string; userId: string; deletePhotos: boolean }) {
+  const { user, supabase } = await requireUser();
+
+  const { data: album } = await supabase
+    .from("albums")
+    .select("owner_id")
+    .eq("id", input.albumId)
+    .maybeSingle();
+  if (!album || album.owner_id !== user.id) throw new Error("Only the owner can remove members.");
+  if (input.userId === user.id) throw new Error("You can't remove yourself.");
+
+  if (input.deletePhotos) {
+    // Owner is allowed to delete others' photos (RLS policy from 0002). Remove
+    // the storage objects first, then the rows.
+    const { data: photos } = await supabase
+      .from("photos")
+      .select("storage_key")
+      .eq("album_id", input.albumId)
+      .eq("uploaded_by", input.userId);
+    await Promise.all((photos ?? []).map((p) => storage.delete(p.storage_key).catch(() => {})));
+    await supabase.from("photos").delete().eq("album_id", input.albumId).eq("uploaded_by", input.userId);
+  }
+
+  const { error } = await supabase
+    .from("album_members")
+    .delete()
+    .eq("album_id", input.albumId)
+    .eq("user_id", input.userId)
+    .select("id");
+  if (error) throw error;
+
+  revalidatePath(`/albums/${input.albumId}`);
+}
+
 export async function updateFocus(input: { albumId: string; photoId: string; x: number; y: number }) {
   const { supabase } = await requireUser();
   const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));

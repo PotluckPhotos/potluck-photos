@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeCanvas } from "qrcode.react";
-import { savePhoto, updateCaption, deletePhoto, updateFocus } from "./actions";
+import { savePhoto, updateCaption, deletePhoto, updateFocus, removeMember } from "./actions";
 import { card, iconBadge, input, primaryButton, ghostButton } from "@/lib/ui";
 import { Envelope, Copy, Users, Camera } from "@/components/icons";
 
@@ -41,6 +41,7 @@ export default function AlbumClient({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [removing, setRemoving] = useState<Member | null>(null);
 
   const joinUrl = `${origin}/join?code=${joinCode}`;
 
@@ -181,16 +182,34 @@ export default function AlbumClient({
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {members.map((m) => (
               <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent-tint)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent-tint)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                   {m.name.charAt(0).toUpperCase()}
                 </div>
-                {m.name}
-                {m.role === "owner" && <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>(owner)</span>}
+                <span style={{ flex: 1 }}>
+                  {m.name}
+                  {m.role === "owner" && <span style={{ color: "var(--text-secondary)", fontSize: 12 }}> (owner)</span>}
+                </span>
+                {isOwner && m.role !== "owner" && m.userId !== currentUserId && (
+                  <button
+                    onClick={() => setRemoving(m)}
+                    style={{ fontSize: 12, border: "none", background: "transparent", cursor: "pointer", color: "var(--text-danger)" }}
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {removing && (
+        <RemoveMemberModal
+          albumId={albumId}
+          member={removing}
+          onClose={() => setRemoving(null)}
+        />
+      )}
 
       <label style={{ display: "block", marginBottom: 20 }}>
         <span style={{ ...primaryButton, width: "100%", cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.7 : 1 }}>
@@ -300,6 +319,60 @@ function PhotoCard({
         />
       )}
     </div>
+  );
+}
+
+function RemoveMemberModal({
+  albumId,
+  member,
+  onClose,
+}: {
+  albumId: string;
+  member: Member;
+  onClose: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function remove(deletePhotos: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      await removeMember({ albumId, userId: member.userId, deletePhotos });
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't remove this member.");
+      setBusy(false);
+    }
+  }
+
+  const dangerButton: React.CSSProperties = {
+    display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "10px 16px",
+    borderRadius: 10, border: "none", cursor: "pointer", background: "#c0392b", color: "#fff", fontSize: 14, fontWeight: 600,
+  };
+
+  return createPortal(
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 400, width: "100%" }}>
+        <h3 style={{ margin: "0 0 6px", fontFamily: "var(--font-head)", fontSize: 18 }}>Remove {member.name}?</h3>
+        <p style={{ margin: "0 0 16px", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+          Do you also want to remove all photos they added to this album? This can&apos;t be undone.
+        </p>
+        {error && <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--text-danger)" }}>{error}</p>}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button onClick={() => remove(true)} disabled={busy} style={{ ...dangerButton, opacity: busy ? 0.6 : 1 }}>
+            {busy ? "Removing…" : "Remove member & their photos"}
+          </button>
+          <button onClick={() => remove(false)} disabled={busy} style={{ ...ghostButton, justifyContent: "center", opacity: busy ? 0.6 : 1 }}>
+            Remove member, keep photos
+          </button>
+          <button onClick={onClose} disabled={busy} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", fontSize: 13, marginTop: 2 }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
