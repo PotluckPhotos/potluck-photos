@@ -80,6 +80,8 @@ async function Dashboard({ joinError }: { joinError?: string }) {
           ))}
         </div>
       )}
+
+      <AboutPotluck />
     </main>
   );
 }
@@ -99,10 +101,20 @@ function Landing() {
         <Link href="/login?mode=signup" style={{ ...primaryButton, fontSize: 15, padding: "12px 22px" }}>Get started — it&apos;s free</Link>
       </section>
 
+      <AboutPotluck showCta />
+    </main>
+  );
+}
+
+function AboutPotluck({ showCta = false }: { showCta?: boolean }) {
+  const oneRow = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 } as const;
+
+  return (
+    <>
       {/* How it works */}
       <section style={{ marginTop: 56 }}>
         <h2 style={{ fontFamily: "var(--font-head)", fontSize: 26, textAlign: "center", margin: "0 0 24px" }}>How it works</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
+        <div style={oneRow}>
           {[
             { icon: <Plus size={16} />, title: "Create an album", body: "Name your trip or event and you're set." },
             { icon: <Users size={15} />, title: "Invite everyone", body: "Share a 5-character code, a link, or a QR." },
@@ -121,12 +133,12 @@ function Landing() {
       {/* Features */}
       <section style={{ marginTop: 56 }}>
         <h2 style={{ fontFamily: "var(--font-head)", fontSize: 26, textAlign: "center", margin: "0 0 24px" }}>What you get</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+        <div style={oneRow}>
           {[
-            { icon: <Camera size={15} color="var(--accent)" />, title: "Shared uploads", body: "No more chasing everyone for their pictures — it all lands in one place." },
-            { icon: <GuestBookIcon size={15} />, title: "Guest book", body: "Written notes about the trip, scattered through the book and the recap." },
-            { icon: <Play size={14} />, title: "Recap slideshow", body: "An auto-playing memories reel with music-video pacing — downloadable as a video." },
-            { icon: <BookIcon size={15} />, title: "Photo book", body: "Pick a template and cover, and export a print-ready PDF." },
+            { icon: <Camera size={15} color="var(--accent)" />, title: "Shared uploads", body: "Everyone's photos land in one place." },
+            { icon: <GuestBookIcon size={15} />, title: "Guest book", body: "Notes about the trip, woven through the book and recap." },
+            { icon: <Play size={14} />, title: "Recap slideshow", body: "An auto-playing memories reel, downloadable as a video." },
+            { icon: <BookIcon size={15} />, title: "Photo book", body: "Pick a template and cover, export a print-ready PDF." },
           ].map((f, i) => (
             <div key={i} style={card}>
               <div style={{ ...iconBadge, marginBottom: 12 }}>{f.icon}</div>
@@ -150,9 +162,11 @@ function Landing() {
           <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: "14px 0 0" }}>
             Open source (AGPL-3.0) — you can also self-host it on your own storage for free.
           </p>
-          <Link href="/login?mode=signup" style={{ ...primaryButton, marginTop: 20 }}>Start your first album</Link>
+          {showCta && (
+            <Link href="/login?mode=signup" style={{ ...primaryButton, marginTop: 20 }}>Start your first album</Link>
+          )}
         </div>
       </section>
-    </main>
+    </>
   );
 }
