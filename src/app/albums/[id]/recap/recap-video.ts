@@ -30,7 +30,7 @@ function loadImages(urls: string[]): Promise<Map<string, HTMLImageElement>> {
   ).then((pairs) => new Map(pairs));
 }
 
-function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number, panX: number, panY: number) {
+function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number, panX: number, panY: number, fx = 50, fy = 50) {
   const ir = img.width / img.height;
   const cr = W / H;
   let dw: number, dh: number;
@@ -41,7 +41,10 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: 
     dw = W * scale;
     dh = dw / ir;
   }
-  ctx.drawImage(img, (W - dw) / 2 + panX, (H - dh) / 2 + panY, dw, dh);
+  // Position by focal point instead of centering, then add the Ken Burns pan.
+  const x = (W - dw) * (fx / 100) + panX;
+  const y = (H - dh) * (fy / 100) + panY;
+  ctx.drawImage(img, x, y, dw, dh);
 }
 
 function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -91,9 +94,9 @@ function drawEntry(ctx: CanvasRenderingContext2D, body: string, author: string) 
   ctx.fillText(`— ${author}`, W / 2, y + 12);
 }
 
-function drawPhoto(ctx: CanvasRenderingContext2D, img: HTMLImageElement, caption: string, prog: number) {
+function drawPhoto(ctx: CanvasRenderingContext2D, img: HTMLImageElement, caption: string, prog: number, fx = 50, fy = 50) {
   const p = Math.max(0, Math.min(1, prog));
-  drawCover(ctx, img, 1.04 + 0.09 * p, -18 * p, -10 * p);
+  drawCover(ctx, img, 1.04 + 0.09 * p, -18 * p, -10 * p, fx, fy);
   if (caption) {
     ctx.save();
     ctx.font = "500 30px system-ui, sans-serif";
@@ -130,7 +133,7 @@ export async function recordRecap(
     const slide = slides[k - 1];
     if (slide.type === "entry") return drawEntry(ctx, slide.body, slide.author);
     const img = images.get(slide.url);
-    if (img) drawPhoto(ctx, img, slide.caption, localT / sceneDur(k));
+    if (img) drawPhoto(ctx, img, slide.caption, localT / sceneDur(k), slide.focusX, slide.focusY);
   }
 
   function drawFrame(t: number) {

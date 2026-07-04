@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { savePhoto, updateCaption, deletePhoto } from "./actions";
+import { savePhoto, updateCaption, deletePhoto, updateFocus } from "./actions";
 import { card, iconBadge, input, primaryButton, ghostButton } from "@/lib/ui";
 import { Envelope, Copy, Users, Camera } from "@/components/icons";
 
@@ -12,6 +12,8 @@ type Photo = {
   caption: string;
   uploadedBy: string;
   url: string;
+  focusX: number;
+  focusY: number;
 };
 
 type Member = { userId: string; role: string; name: string };
@@ -222,15 +224,34 @@ function PhotoCard({
 }) {
   const [caption, setCaption] = useState(photo.caption);
   const [saved, setSaved] = useState(false);
+  const [editingFocus, setEditingFocus] = useState(false);
+  const [focus, setFocus] = useState({ x: photo.focusX, y: photo.focusY });
+  const [savingFocus, setSavingFocus] = useState(false);
+
+  async function saveFocus() {
+    setSavingFocus(true);
+    await updateFocus({ albumId, photoId: photo.id, x: focus.x, y: focus.y });
+    setSavingFocus(false);
+    setEditingFocus(false);
+  }
 
   return (
     <div style={{ ...card, padding: 0, overflow: "hidden" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={photo.url}
-        alt={photo.caption || "Album photo"}
-        style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }}
-      />
+      <div style={{ position: "relative" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photo.url}
+          alt={photo.caption || "Album photo"}
+          style={{ width: "100%", height: 150, objectFit: "cover", objectPosition: `${focus.x}% ${focus.y}%`, display: "block" }}
+        />
+        <button
+          onClick={() => setEditingFocus(true)}
+          aria-label="Adjust framing"
+          style={{ position: "absolute", top: 8, right: 8, fontSize: 11, padding: "3px 8px", borderRadius: 6, border: "none", cursor: "pointer", background: "rgba(0,0,0,0.55)", color: "#fff" }}
+        >
+          Adjust
+        </button>
+      </div>
       <div style={{ padding: "9px 10px" }}>
         <input
           value={caption}
@@ -261,6 +282,81 @@ function PhotoCard({
               Delete
             </button>
           )}
+        </div>
+      </div>
+
+      {editingFocus && (
+        <FocusEditor
+          url={photo.url}
+          focus={focus}
+          setFocus={setFocus}
+          onSave={saveFocus}
+          onCancel={() => {
+            setFocus({ x: photo.focusX, y: photo.focusY });
+            setEditingFocus(false);
+          }}
+          saving={savingFocus}
+        />
+      )}
+    </div>
+  );
+}
+
+function FocusEditor({
+  url,
+  focus,
+  setFocus,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  url: string;
+  focus: { x: number; y: number };
+  setFocus: (f: { x: number; y: number }) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
+  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setFocus({ x: Math.round(x), y: Math.round(y) });
+  }
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: 20 }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 16, maxWidth: 460, width: "100%" }}>
+        <p style={{ margin: "0 0 10px", fontSize: 14, color: "var(--text-secondary)" }}>
+          Tap the face or subject — it&apos;ll stay in frame wherever the photo is cropped.
+        </p>
+        <div onClick={handleClick} style={{ position: "relative", cursor: "crosshair", lineHeight: 0, borderRadius: 10, overflow: "hidden" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt="Set focal point" style={{ width: "100%", height: "auto", display: "block" }} />
+          <div
+            style={{
+              position: "absolute",
+              left: `${focus.x}%`,
+              top: `${focus.y}%`,
+              width: 28,
+              height: 28,
+              marginLeft: -14,
+              marginTop: -14,
+              borderRadius: "50%",
+              border: "3px solid #fff",
+              boxShadow: "0 0 0 2px rgba(0,0,0,0.4)",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+          <button onClick={onCancel} style={ghostButton}>Cancel</button>
+          <button onClick={onSave} disabled={saving} style={{ ...primaryButton, opacity: saving ? 0.6 : 1 }}>
+            {saving ? "Saving…" : "Save framing"}
+          </button>
         </div>
       </div>
     </div>

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: rows } = await supabase
     .from("photos")
-    .select("id, storage_key, caption")
+    .select("id, storage_key, caption, focus_x, focus_y")
     .eq("album_id", albumId)
     .in("id", photoIds)
     .order("created_at", { ascending: true });
@@ -35,12 +35,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const order = new Map(photoIds.map((pid: string, i: number) => [pid, i]));
   const ordered = [...rows].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 
+  const toPhoto = (r: (typeof ordered)[number]) => ({
+    url: storage.getPublicUrl(r.storage_key),
+    caption: r.caption ?? "",
+    focusX: r.focus_x ?? 50,
+    focusY: r.focus_y ?? 50,
+  });
+
   const coverRow = ordered.find((r) => r.id === coverPhotoId) ?? ordered[0];
-  const cover = { url: storage.getPublicUrl(coverRow.storage_key), caption: coverRow.caption ?? "" };
+  const cover = toPhoto(coverRow);
   // Cover photo isn't repeated in the interior pages.
-  const interior = ordered
-    .filter((r) => r.id !== coverRow.id)
-    .map((r) => ({ url: storage.getPublicUrl(r.storage_key), caption: r.caption ?? "" }));
+  const interior = ordered.filter((r) => r.id !== coverRow.id).map(toPhoto);
 
   const { data: entryRows } = await supabase
     .from("guestbook_entries")

@@ -36,7 +36,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
 
   const { data: photos } = await supabase
     .from("photos")
-    .select("id, storage_key, caption, uploaded_by, width, height")
+    .select("id, storage_key, caption, uploaded_by, width, height, focus_x, focus_y")
     .eq("album_id", id)
     .order("created_at", { ascending: false });
 
@@ -46,6 +46,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
     caption: p.caption ?? "",
     uploadedBy: p.uploaded_by,
     url: storage.getPublicUrl(p.storage_key),
+    focusX: p.focus_x ?? 50,
+    focusY: p.focus_y ?? 50,
   }));
 
   const { data: guestbook } = await supabase

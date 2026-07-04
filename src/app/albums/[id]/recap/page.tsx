@@ -16,7 +16,7 @@ export default async function RecapPage({ params }: { params: Promise<{ id: stri
 
   const { data: photos } = await supabase
     .from("photos")
-    .select("storage_key, caption")
+    .select("storage_key, caption, focus_x, focus_y")
     .eq("album_id", id)
     .order("created_at", { ascending: true });
 
@@ -30,6 +30,8 @@ export default async function RecapPage({ params }: { params: Promise<{ id: stri
     type: "photo",
     url: storage.getPublicUrl(p.storage_key),
     caption: p.caption ?? "",
+    focusX: p.focus_x ?? 50,
+    focusY: p.focus_y ?? 50,
   }));
 
   const entrySlides: Slide[] = (entryRows ?? []).map((g) => {

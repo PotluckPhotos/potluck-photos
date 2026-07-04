@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { recordRecap } from "./recap-video";
 
 export type Slide =
-  | { type: "photo"; url: string; caption: string }
+  | { type: "photo"; url: string; caption: string; focusX: number; focusY: number }
   | { type: "entry"; body: string; author: string };
 
 const SLIDE_MS = 5000;
@@ -95,7 +95,7 @@ export default function RecapPlayer({
           <div style={{ fontSize: 44, fontWeight: 500, textAlign: "center", padding: "0 24px" }}>{title}</div>
         </div>
       ) : current!.type === "photo" ? (
-        <div key={index} className={`fade ${kbClass}`} style={imageLayer(current!.url)} />
+        <div key={index} className={`fade ${kbClass}`} style={imageLayer(current!.url, current!.focusX, current!.focusY)} />
       ) : (
         <div key={index} style={entryCard} className="fade">
           <div style={{ fontSize: 26, fontStyle: "italic", fontWeight: 500, textAlign: "center", padding: "0 40px", lineHeight: 1.5 }}>
@@ -174,13 +174,13 @@ const fullscreen: React.CSSProperties = {
   cursor: "pointer",
 };
 
-function imageLayer(url: string): React.CSSProperties {
+function imageLayer(url: string, focusX = 50, focusY = 50): React.CSSProperties {
   return {
     position: "absolute",
     inset: 0,
     backgroundImage: `url("${url}")`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: `${focusX}% ${focusY}%`,
     willChange: "transform, opacity",
   };
 }

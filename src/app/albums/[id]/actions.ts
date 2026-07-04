@@ -39,6 +39,17 @@ export async function updateCaption(input: { albumId: string; photoId: string; c
   revalidatePath(`/albums/${input.albumId}`);
 }
 
+export async function updateFocus(input: { albumId: string; photoId: string; x: number; y: number }) {
+  const { supabase } = await requireUser();
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+  const { error } = await supabase
+    .from("photos")
+    .update({ focus_x: clamp(input.x), focus_y: clamp(input.y) })
+    .eq("id", input.photoId);
+  if (error) throw error;
+  revalidatePath(`/albums/${input.albumId}`);
+}
+
 export async function deletePhoto(input: { albumId: string; photoId: string; key: string }) {
   const { supabase } = await requireUser();
   // RLS restricts which rows a user may delete (own uploads, or owner).

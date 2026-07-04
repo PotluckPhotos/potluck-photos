@@ -1,6 +1,6 @@
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
 
-export type BookPhoto = { url: string; caption: string };
+export type BookPhoto = { url: string; caption: string; focusX?: number; focusY?: number };
 export type BookEntry = { body: string; author: string };
 export type BookSize = { label: string; width: number; height: number };
 export type Template = "classic" | "modern" | "collage";
@@ -76,11 +76,13 @@ function drawContain(page: PDFPage, img: { width: number; height: number }, draw
 }
 
 // Cover-crop values (image fills box; overflow is clipped by the page bounds).
-function coverDims(img: { width: number; height: number }, W: number, H: number) {
+// Positions by focal point (fx/fy percent from top-left). fy is flipped because
+// pdf-lib's origin is bottom-left.
+function coverDims(img: { width: number; height: number }, W: number, H: number, fx = 50, fy = 50) {
   const scale = Math.max(W / img.width, H / img.height);
   const dw = img.width * scale;
   const dh = img.height * scale;
-  return { x: (W - dw) / 2, y: (H - dh) / 2, width: dw, height: dh };
+  return { x: (W - dw) * (fx / 100), y: (H - dh) * (1 - fy / 100), width: dw, height: dh };
 }
 
 export async function generateBook(
@@ -135,7 +137,7 @@ async function drawCover(pdf: PDFDocument, fonts: Fonts, o: { title: string; tem
     drawCentered(page, o.title, MARGIN + 28, fonts.bold, 26, rgb(0.1, 0.1, 0.1), o.W - MARGIN * 2);
   } else {
     // modern + collage: full-bleed cover photo with title over a dark bar.
-    if (img) page.drawImage(img, coverDims(img, o.W, o.H));
+    if (img) page.drawImage(img, coverDims(img, o.W, o.H, o.cover?.focusX, o.cover?.focusY));
     else page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(0.15, 0.15, 0.18) });
     page.drawRectangle({ x: 0, y: 0, width: o.W, height: 110, color: rgb(0, 0, 0), opacity: 0.45 });
     drawCentered(page, o.title, 46, fonts.bold, 28, rgb(1, 1, 1), o.W - MARGIN * 2);
@@ -149,7 +151,7 @@ async function drawPhotoBlock(pdf: PDFDocument, fonts: Fonts, o: { template: Tem
     const photo = o.photos[0];
     const img = await fetchImage(pdf, photo.url);
     page.drawRectangle({ x: 0, y: 0, width: o.W, height: o.H, color: rgb(0.1, 0.1, 0.1) });
-    if (img) page.drawImage(img, coverDims(img, o.W, o.H));
+    if (img) page.drawImage(img, coverDims(img, o.W, o.H, photo.focusX, photo.focusY));
     if (photo.caption) {
       page.drawRectangle({ x: 0, y: 0, width: o.W, height: 52, color: rgb(0, 0, 0), opacity: 0.4 });
       page.drawText(truncate(photo.caption, fonts.regular, 13, o.W - MARGIN * 2), { x: MARGIN, y: 20, size: 13, font: fonts.regular, color: rgb(1, 1, 1) });
