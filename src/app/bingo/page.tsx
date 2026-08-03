@@ -6,7 +6,6 @@ import { Plus, PaperPlane, ChevronLeft } from "@/components/icons";
 
 const ERRORS: Record<string, string> = {
   title: "Give your board a name.",
-  count: "You need at least 24 phrases — one per line.",
   short: "Enter the 5-character code.",
   invalid: "That code didn’t match a board.",
 };
@@ -54,13 +53,15 @@ export default async function BingoHome({
             <h3 style={{ margin: 0, fontFamily: "var(--font-head)", fontSize: 17 }}>Create a board</h3>
           </div>
           <input name="title" placeholder="Road trip bingo" required style={input} />
-          <textarea
-            name="phrases"
-            rows={8}
-            required
-            placeholder={"One phrase per line — at least 24.\n\nSomeone falls asleep\nGas station snacks\nWrong turn\nCows in a field"}
-            style={{ ...input, marginTop: 10, resize: "vertical", lineHeight: 1.5 }}
-          />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: 13.5, color: "var(--text-secondary)" }}>
+            <span>Grid</span>
+            <input name="cols" type="number" min={3} max={8} defaultValue={5} aria-label="Columns" style={{ ...input, width: 64, textAlign: "center" }} />
+            <span>×</span>
+            <input name="rows" type="number" min={3} max={8} defaultValue={5} aria-label="Rows" style={{ ...input, width: 64, textAlign: "center" }} />
+          </div>
+          <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
+            You&apos;ll fill in the squares next — tap any square on the board to write it.
+          </p>
           <button type="submit" style={{ ...primaryButton, width: "100%", marginTop: 10 }}>Create board</button>
         </form>
 

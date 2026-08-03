@@ -12,20 +12,22 @@ export default async function BingoBoardPage({ params }: { params: Promise<{ id:
   // RLS only exposes boards the user owns or holds a card for.
   const { data: board } = await supabase
     .from("bingo_boards")
-    .select("id, title, phrases, join_code, owner_id")
+    .select("id, title, cols, rows, cells, join_code, owner_id")
     .eq("id", id)
     .maybeSingle();
   if (!board) notFound();
 
   const { data: card } = await supabase
     .from("bingo_cards")
-    .select("layout, marks")
+    .select("marks")
     .eq("board_id", id)
     .eq("user_id", user.id)
     .maybeSingle();
   if (!card) notFound();
 
-  const squares = (card.layout as number[]).map((i) => board.phrases[i] ?? "");
+  const total = board.cols * board.rows;
+  const cells = Array.from({ length: total }, (_, i) => (board.cells as string[])[i] ?? "");
+  const marks = Array.from({ length: total }, (_, i) => !!(card.marks as boolean[])[i]);
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 28px 80px" }}>
@@ -41,7 +43,14 @@ export default async function BingoBoardPage({ params }: { params: Promise<{ id:
         </span>
       </div>
 
-      <BingoCard boardId={board.id} squares={squares} marks={card.marks as boolean[]} />
+      <BingoCard
+        boardId={board.id}
+        cols={board.cols}
+        rows={board.rows}
+        cells={cells}
+        marks={marks}
+        isOwner={board.owner_id === user.id}
+      />
 
       {board.owner_id === user.id && <DeleteBoard boardId={board.id} title={board.title} />}
     </main>
