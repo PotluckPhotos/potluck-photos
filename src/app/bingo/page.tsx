@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { createBoard, joinBoard } from "./actions";
 import { card, input, primaryButton, iconBadge } from "@/lib/ui";
 import { Plus, PaperPlane, ChevronLeft } from "@/components/icons";
+import InviteGate from "@/components/InviteGate";
 
 const ERRORS: Record<string, string> = {
   title: "Give your board a name.",
@@ -13,10 +14,12 @@ const ERRORS: Record<string, string> = {
 export default async function BingoHome({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; inviteError?: string }>;
 }) {
-  const { error } = await searchParams;
-  const { supabase } = await requireUser();
+  const { error, inviteError } = await searchParams;
+  const { user, supabase } = await requireUser();
+
+  const { data: profile } = await supabase.from("profiles").select("approved").eq("id", user.id).maybeSingle();
 
   // Cards the user holds, with their board — covers both owned and joined.
   const { data: cards } = await supabase
@@ -33,19 +36,22 @@ export default async function BingoHome({
 
   return (
     <main style={{ maxWidth: 1040, margin: "0 auto", padding: "24px 28px 80px" }}>
-      <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 14 }}>
+      <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 14 }}>
         <ChevronLeft size={14} />
         Back
       </Link>
       <h1 style={{ fontFamily: "var(--font-head)", fontSize: 36, fontWeight: 700, margin: 0 }}>Bingo</h1>
       <p style={{ color: "var(--text-secondary)", margin: "6px 0 0", fontSize: 14 }}>
-        Make a card of things to spot — road trips, weddings, family gatherings. Everyone gets their own shuffled card.
+        Make a grid of things to spot — road trips, weddings, family gatherings. Everyone plays the same board.
       </p>
 
       {error && (
         <p style={{ margin: "16px 0 0", fontSize: 13.5, color: "var(--text-danger)" }}>{ERRORS[error] ?? "Something went wrong."}</p>
       )}
 
+      {!profile?.approved && <InviteGate redirectTo="/bingo" error={!!inviteError} />}
+
+      {profile?.approved && (
       <section style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20, margin: "24px 0 44px" }}>
         <form action={createBoard} style={card}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -74,6 +80,7 @@ export default async function BingoHome({
           <button type="submit" style={{ ...primaryButton, width: "100%", marginTop: 10 }}>Join board</button>
         </form>
       </section>
+      )}
 
       {boards.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>No boards yet. Create one above, or join with a code.</p>

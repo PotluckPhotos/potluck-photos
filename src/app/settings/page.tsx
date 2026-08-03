@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { updateDisplayName } from "./actions";
+import { updateDisplayName, resetInviteLink } from "./actions";
 import { card, input, primaryButton, ghostButton } from "@/lib/ui";
 import { ChevronLeft } from "@/components/icons";
 
@@ -14,13 +14,19 @@ export default async function SettingsPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, is_admin")
     .eq("id", user.id)
     .maybeSingle();
 
+  let inviteCode: string | null = null;
+  if (profile?.is_admin) {
+    const { data } = await supabase.rpc("current_invite_code");
+    inviteCode = data ?? null;
+  }
+
   return (
     <main style={{ maxWidth: 640, margin: "0 auto", padding: "24px 28px 80px" }}>
-      <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 14 }}>
+      <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 14 }}>
         <ChevronLeft size={14} />
         Back
       </Link>
@@ -39,13 +45,40 @@ export default async function SettingsPage({
         {error === "empty" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--text-danger)" }}>Name can&apos;t be empty.</p>}
       </section>
 
-      <section style={card}>
+      <section style={{ ...card, marginBottom: 20 }}>
         <h3 style={{ margin: "0 0 4px", fontFamily: "var(--font-head)", fontSize: 17 }}>Account</h3>
         <p style={{ margin: "0 0 12px", fontSize: 14, color: "var(--text-secondary)" }}>Signed in as {user.email}</p>
         <form action="/auth/signout" method="post">
           <button type="submit" style={ghostButton}>Sign out</button>
         </form>
       </section>
+
+      {profile?.is_admin && (
+        <section style={card}>
+          <h3 style={{ margin: "0 0 4px", fontFamily: "var(--font-head)", fontSize: 17 }}>Invite link</h3>
+          <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "var(--text-secondary)" }}>
+            New signups need this to create or join anything. Resetting it revokes every old link instantly.
+          </p>
+          {inviteCode ? (
+            <div style={{ background: "var(--accent-tint)", borderRadius: 12, padding: "12px 16px", marginBottom: 14, wordBreak: "break-all" }}>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>Share this link:</div>
+              <code style={{ fontSize: 13.5, color: "var(--accent)", fontWeight: 600 }}>
+                {`https://potluck.photos/invite?code=${inviteCode}`}
+              </code>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 8 }}>
+                Or just the code: <strong style={{ letterSpacing: 1 }}>{inviteCode}</strong>
+              </div>
+            </div>
+          ) : (
+            <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "var(--text-secondary)" }}>No active invite link yet.</p>
+          )}
+          <form action={resetInviteLink}>
+            <button type="submit" style={ghostButton}>
+              {inviteCode ? "Reset link (revokes the old one)" : "Generate invite link"}
+            </button>
+          </form>
+        </section>
+      )}
     </main>
   );
 }
