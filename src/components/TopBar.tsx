@@ -17,6 +17,7 @@ export default async function TopBar() {
 
       {user ? (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Link href="/bingo" style={ghostButton}>Bingo</Link>
           <Link href="/settings" style={ghostButton}>Settings</Link>
           <form action="/auth/signout" method="post">
             <button type="submit" style={ghostButton}>Sign out</button>
