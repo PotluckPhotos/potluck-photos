@@ -3,11 +3,13 @@
 -- their marks. Safe to run whether or not 0008 was applied.
 
 drop trigger if exists on_bingo_board_created on public.bingo_boards;
-drop function if exists public.handle_new_bingo_board();
-drop function if exists public.join_bingo_by_code(text);
-drop function if exists public.bingo_random_layout(int, int);
-drop table if exists public.bingo_cards;
-drop table if exists public.bingo_boards;
+drop function if exists public.handle_new_bingo_board() cascade;
+drop function if exists public.join_bingo_by_code(text) cascade;
+drop function if exists public.bingo_random_layout(int, int) cascade;
+-- cascade: the boards policy references bingo_cards, so a plain drop is
+-- refused ("other objects depend on it").
+drop table if exists public.bingo_cards cascade;
+drop table if exists public.bingo_boards cascade;
 
 create table public.bingo_boards (
   id uuid primary key default gen_random_uuid(),
