@@ -3,7 +3,6 @@ import { requireUser } from "@/lib/auth";
 import { createBoard, joinBoard } from "./actions";
 import { card, input, primaryButton, iconBadge } from "@/lib/ui";
 import { Plus, PaperPlane, ChevronLeft } from "@/components/icons";
-import InviteGate from "@/components/InviteGate";
 
 const ERRORS: Record<string, string> = {
   title: "Give your board a name.",
@@ -14,12 +13,10 @@ const ERRORS: Record<string, string> = {
 export default async function BingoHome({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; inviteError?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const { error, inviteError } = await searchParams;
-  const { user, supabase } = await requireUser();
-
-  const { data: profile } = await supabase.from("profiles").select("approved").eq("id", user.id).maybeSingle();
+  const { error } = await searchParams;
+  const { supabase } = await requireUser();
 
   // Cards the user holds, with their board — covers both owned and joined.
   const { data: cards } = await supabase
@@ -49,9 +46,6 @@ export default async function BingoHome({
         <p style={{ margin: "16px 0 0", fontSize: 13.5, color: "var(--text-danger)" }}>{ERRORS[error] ?? "Something went wrong."}</p>
       )}
 
-      {!profile?.approved && <InviteGate redirectTo="/bingo" error={!!inviteError} />}
-
-      {profile?.approved && (
       <section style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20, margin: "24px 0 44px" }}>
         <form action={createBoard} style={card}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -80,7 +74,6 @@ export default async function BingoHome({
           <button type="submit" style={{ ...primaryButton, width: "100%", marginTop: 10 }}>Join board</button>
         </form>
       </section>
-      )}
 
       {boards.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>No boards yet. Create one above, or join with a code.</p>

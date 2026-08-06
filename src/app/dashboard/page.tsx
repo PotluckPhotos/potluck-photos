@@ -3,7 +3,6 @@ import { requireUser } from "@/lib/auth";
 import { createAlbum, joinByCode } from "./actions";
 import { card, input, primaryButton, iconBadge } from "@/lib/ui";
 import { Plus, PaperPlane, PhotoStack } from "@/components/icons";
-import InviteGate from "@/components/InviteGate";
 
 type AlbumRow = { id: string; name: string; event_date: string | null; join_code: string };
 
@@ -16,12 +15,10 @@ const COVERS = [
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ joinError?: string; inviteError?: string }>;
+  searchParams: Promise<{ joinError?: string }>;
 }) {
-  const { joinError, inviteError } = await searchParams;
+  const { joinError } = await searchParams;
   const { user, supabase } = await requireUser();
-
-  const { data: profile } = await supabase.from("profiles").select("approved").eq("id", user.id).maybeSingle();
 
   const { data: albums } = await supabase
     .from("albums")
@@ -34,9 +31,6 @@ export default async function DashboardPage({
       <h1 style={{ fontFamily: "var(--font-head)", fontSize: 36, fontWeight: 700, margin: 0 }}>Your albums</h1>
       <p style={{ margin: "6px 0 0", color: "var(--text-secondary)", fontSize: 14 }}>Signed in as {user.email}</p>
 
-      {!profile?.approved && <InviteGate redirectTo="/dashboard" error={!!inviteError} />}
-
-      {profile?.approved && (
       <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, margin: "24px 0 44px" }}>
         <form action={createAlbum} style={card}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -61,7 +55,6 @@ export default async function DashboardPage({
           <button type="submit" style={{ ...primaryButton, width: "100%", marginTop: 10 }}>Join album</button>
         </form>
       </section>
-      )}
 
       {list.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>No albums yet. Create one above, or join with a code someone shared.</p>

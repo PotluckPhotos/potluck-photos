@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { updateDisplayName, resetInviteLink } from "./actions";
+import { updateDisplayName } from "./actions";
 import { card, input, primaryButton, ghostButton } from "@/lib/ui";
 import { ChevronLeft } from "@/components/icons";
 
@@ -14,11 +14,10 @@ export default async function SettingsPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, is_admin")
+    .select("display_name")
     .eq("id", user.id)
     .maybeSingle();
 
-  const { data: inviteCode } = await supabase.rpc("current_invite_code");
 
   return (
     <main style={{ maxWidth: 640, margin: "0 auto", padding: "24px 28px 80px" }}>
@@ -49,34 +48,6 @@ export default async function SettingsPage({
         </form>
       </section>
 
-      <section style={card}>
-        <h3 style={{ margin: "0 0 4px", fontFamily: "var(--font-head)", fontSize: 17 }}>Invite link</h3>
-        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "var(--text-secondary)" }}>
-          Share this with someone so they can join Potluck.
-          {profile?.is_admin && " Resetting it revokes every old link instantly."}
-        </p>
-        {inviteCode ? (
-          <div style={{ background: "var(--accent-tint)", borderRadius: 12, padding: "12px 16px", marginBottom: 14, wordBreak: "break-all" }}>
-            <code style={{ fontSize: 13.5, color: "var(--accent)", fontWeight: 600 }}>
-              {`https://potluck.photos/invite?code=${inviteCode}`}
-            </code>
-            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 8 }}>
-              Or just the code: <strong style={{ letterSpacing: 1 }}>{inviteCode}</strong>
-            </div>
-          </div>
-        ) : (
-          <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "var(--text-secondary)" }}>
-            {profile?.is_admin ? "No active invite link yet." : "No invite link is active right now."}
-          </p>
-        )}
-        {profile?.is_admin && (
-          <form action={resetInviteLink}>
-            <button type="submit" style={ghostButton}>
-              {inviteCode ? "Reset link (revokes the old one)" : "Generate invite link"}
-            </button>
-          </form>
-        )}
-      </section>
     </main>
   );
 }
